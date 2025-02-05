@@ -33,7 +33,8 @@ def jap_total_sum(jap_sum_even_numbers, jap_sum_odd_numbers):
 # Define a job that includes all assets
 asset_parallel = define_asset_job(
     name="asset_parallel",
-    selection=[jap_generate_numbers, jap_filter_even_numbers, jap_filter_odd_numbers, jap_sum_even_numbers, jap_sum_odd_numbers, jap_total_sum]
+    selection=[jap_generate_numbers, jap_filter_even_numbers, jap_filter_odd_numbers, jap_sum_even_numbers, jap_sum_odd_numbers, jap_total_sum],
+    tags={"parallel": "true", "asset": "true"}
 )
 
 # Schedule the job to run every minute

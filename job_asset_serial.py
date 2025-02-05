@@ -27,7 +27,8 @@ def jas_multiply_result(jas_sum_numbers):
 
 asset_serial = define_asset_job(
     name="asset_serial",
-    selection=[jas_generate_numbers, jas_filter_even_numbers, jas_sum_numbers, jas_multiply_result]
+    selection=[jas_generate_numbers, jas_filter_even_numbers, jas_sum_numbers, jas_multiply_result],
+    tags={"parallel": "false", "asset": "true"}
 )
 
 schedule_asset_serial = ScheduleDefinition(
