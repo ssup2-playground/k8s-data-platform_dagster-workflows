@@ -1,26 +1,22 @@
 from dagster import asset, MetadataValue, ScheduleDefinition, AssetSelection, define_asset_job
 
-@asset
+@asset(description="Generate a list of numbers", kinds=["python"], owners=["team:ssup2"], tags={"parallel": "false"})
 def jas_generate_numbers():
-    """Generate a list of numbers"""
     numbers = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
     return numbers
 
-@asset
+@asset(description="Filter even numbers from the generated list", kinds=["python"], owners=["team:ssup2"], tags={"parallel": "false"})
 def jas_filter_even_numbers(jas_generate_numbers):
-    """Filter even numbers from the generated list"""
     even_numbers = [num for num in jas_generate_numbers if num % 2 == 0]
     return even_numbers
 
-@asset
+@asset(description="Calculate the sum of the filtered even numbers", kinds=["python"], owners=["team:ssup2"], tags={"parallel": "false"})
 def jas_sum_numbers(jas_filter_even_numbers):
-    """Calculate the sum of the filtered even numbers"""
     sum_result = sum(jas_filter_even_numbers)
     return sum_result
 
-@asset
+@asset(description="Multiply the sum by 2", kinds=["python"], owners=["team:ssup2"], tags={"parallel": "false"})
 def jas_multiply_result(jas_sum_numbers):
-    """Multiply the sum by 2"""
     result = jas_sum_numbers * 2
     return result
 

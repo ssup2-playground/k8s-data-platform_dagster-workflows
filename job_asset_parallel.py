@@ -1,33 +1,27 @@
 from dagster import asset, define_asset_job, ScheduleDefinition
 
-@asset
+@asset(description="Generate a list of numbers from 1 to 10", kinds=["python"], owners=["team:ssup2"], tags={"parallel": "false"})
 def jap_generate_numbers():
-    """Generate a list of numbers from 1 to 10"""
     return list(range(1, 11))
 
-@asset
+@asset(description="Filter even numbers from the list", kinds=["python"], owners=["team:ssup2"], tags={"parallel": "false"})
 def jap_filter_even_numbers(jap_generate_numbers):
-    """Filter even numbers from the list"""
     return [num for num in jap_generate_numbers if num % 2 == 0]
 
-@asset
+@asset(description="Filter odd numbers from the list", kinds=["python"], owners=["team:ssup2"], tags={"parallel": "false"})
 def jap_filter_odd_numbers(jap_generate_numbers):
-    """Filter odd numbers from the list"""
     return [num for num in jap_generate_numbers if num % 2 != 0]
 
-@asset
+@asset(description="Calculate the sum of the even numbers", kinds=["python"], owners=["team:ssup2"], tags={"parallel": "false"})
 def jap_sum_even_numbers(jap_filter_even_numbers):
-    """Calculate the sum of the even numbers"""
     return sum(jap_filter_even_numbers)
 
-@asset
+@asset(description="Calculate the sum of the odd numbers", kinds=["python"], owners=["team:ssup2"], tags={"parallel": "false"})
 def jap_sum_odd_numbers(jap_filter_odd_numbers):
-    """Calculate the sum of the odd numbers"""
     return sum(jap_filter_odd_numbers)
 
-@asset
+@asset(description="Sum the two sums", kinds=["python"], owners=["team:ssup2"], tags={"parallel": "false"})
 def jap_total_sum(jap_sum_even_numbers, jap_sum_odd_numbers):
-    """Sum the two sums"""
     return jap_sum_even_numbers + jap_sum_odd_numbers
 
 # Define a job that includes all assets
