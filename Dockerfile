@@ -6,4 +6,4 @@ RUN pip install \
         dagster-postgres \
         dagster-k8s
 
-COPY pipeline-test /
+COPY pipelines /
