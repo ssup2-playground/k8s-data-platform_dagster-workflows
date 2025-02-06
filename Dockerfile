@@ -6,4 +6,5 @@ RUN pip install \
         dagster-postgres \
         dagster-k8s
 
+WORKDIR /pipelines
 COPY pipelines /pipelines
