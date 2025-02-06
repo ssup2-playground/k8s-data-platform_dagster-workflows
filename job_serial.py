@@ -1,18 +1,58 @@
 from dagster import op, job, ScheduleDefinition
 
-@op(description="Generate a list of numbers", tags={"parallel": "false"})
+@op(description="Generate a list of numbers",
+    tags={
+        "parallel": "false",
+        "dagster-k8s/config": {
+            "container_config": {
+                "resources": {
+                    "requests": {"cpu": "200m", "memory": "32Mi"},
+                }
+            },
+        }
+    })
 def js_generate_numbers():
     return [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
 
-@op(description="Filter even numbers from the input list", tags={"parallel": "false"})
+@op(description="Filter even numbers from the input list",
+    tags={
+        "parallel": "false",
+        "dagster-k8s/config": {
+            "container_config": {
+                "resources": {
+                    "requests": {"cpu": "200m", "memory": "32Mi"},
+                }
+            },
+        }
+    })
 def js_filter_even_numbers(numbers):
     return [num for num in numbers if num % 2 == 0]
 
-@op(description="Calculate the sum of the numbers", tags={"parallel": "false"})
+@op(description="Calculate the sum of the numbers",
+    tags={
+        "parallel": "false",
+        "dagster-k8s/config": {
+            "container_config": {
+                "resources": {
+                    "requests": {"cpu": "200m", "memory": "32Mi"},
+                }
+            },
+        }
+    })
 def js_sum_numbers(numbers):
     return sum(numbers)
 
-@op(description="Multiply the final sum by a given multiplier", tags={"parallel": "false"})
+@op(description="Multiply the final sum by a given multiplier",
+    tags={
+        "parallel": "false",
+        "dagster-k8s/config": {
+            "container_config": {
+                "resources": {
+                    "requests": {"cpu": "200m", "memory": "32Mi"},
+                }
+            },
+        }
+    })
 def js_multiply_result(sum_value: int, multiplier: int = 2):
     return sum_value * multiplier
 
