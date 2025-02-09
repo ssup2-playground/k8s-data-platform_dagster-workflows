@@ -26,6 +26,7 @@ def get_io_manager():
             }),
             "s3": s3_resource.configured({
                 "endpoint_url": "https://minio.minio:9000",
+                "use_ssl": False,
                 "aws_access_key_id": "root",
                 "aws_secret_access_key": "root123!",
             })
