@@ -1,11 +1,7 @@
 FROM python:3.11-slim
 
-RUN pip install --upgrade pip
-RUN pip install \
-        dagster \
-        dagster-postgres \
-        dagster-k8s \
-        dagster-aws
+COPY requirements.txt requirements.txt
+RUN pip3 install -r requirements.txt
 
 WORKDIR /pipelines
 COPY pipelines /pipelines
