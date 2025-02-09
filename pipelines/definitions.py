@@ -22,7 +22,7 @@ def get_io_manager():
         return {
             "io_manager": s3_pickle_io_manager.configured({
                 "s3_bucket": "dagster",
-                "s3_prefix": "pipelines",
+                "s3_prefix": "pipelines/pipeline-test",
             }),
             "s3": s3_resource.configured({
                 "endpoint_url": "https://minio.minio:9000",
