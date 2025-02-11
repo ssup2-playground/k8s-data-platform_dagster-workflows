@@ -61,8 +61,16 @@ asset_serial = define_asset_job(
     name="asset_serial",
     description="A job that executes in serial with assets",
     selection=[jas_generate_numbers, jas_filter_even_numbers, jas_sum_numbers, jas_multiply_result],
-    tags={"parallel": "false", "asset": "true"}
-)
+    tags={
+        "parallel": "false", "asset": "true",
+        "dagster-k8s/config": {
+            "container_config": {
+                "resources": {
+                    "requests": {"cpu": "200m", "memory": "32Mi"},
+                }
+            },
+        }
+    })
 
 schedule_asset_serial = ScheduleDefinition(
     job=asset_serial,

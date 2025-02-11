@@ -83,8 +83,16 @@ asset_parallel = define_asset_job(
     name="asset_parallel",
     description="A job that executes in parallel with assets",
     selection=[jap_generate_numbers, jap_filter_even_numbers, jap_filter_odd_numbers, jap_sum_even_numbers, jap_sum_odd_numbers, jap_total_sum],
-    tags={"parallel": "true", "asset": "true"}
-)
+    tags={
+        "parallel": "true", "asset": "true",
+        "dagster-k8s/config": {
+            "container_config": {
+                "resources": {
+                    "requests": {"cpu": "200m", "memory": "32Mi"},
+                }
+            },
+        }
+    })
 
 # Schedule the job to run every minute
 schedule_asset_parallel = ScheduleDefinition(

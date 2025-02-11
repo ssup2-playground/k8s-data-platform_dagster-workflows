@@ -56,7 +56,17 @@ def js_sum_numbers(numbers):
 def js_multiply_result(sum_value: int, multiplier: int = 2):
     return sum_value * multiplier
 
-@job(description="A job that executes in serial", tags={"parallel": "false"})
+@job(description="A job that executes in serial",
+    tags={
+        "parallel": "false",
+        "dagster-k8s/config": {
+            "container_config": {
+                "resources": {
+                    "requests": {"cpu": "200m", "memory": "32Mi"},
+                }
+            },
+        }
+    })
 def serial():
     even_numbers = js_filter_even_numbers(js_generate_numbers())
     sum_value = js_sum_numbers(even_numbers)

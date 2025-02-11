@@ -70,7 +70,17 @@ def jp_sum_numbers(numbers):
 def jp_sum_two_numbers(first_number, second_number):
     return first_number + second_number
 
-@job(description="A job that executes in parallel", tags={"parallel": "true"})
+@job(description="A job that executes in parallel", 
+    tags={
+        "parallel": "true",
+        "dagster-k8s/config": {
+            "container_config": {
+                "resources": {
+                    "requests": {"cpu": "200m", "memory": "32Mi"},
+                }
+            },
+        }
+    })
 def parallel():
     numbers = jp_generate_numbers()
     
