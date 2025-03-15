@@ -21,7 +21,7 @@ jobs:
     - name: Prepare
       id: prepare
       run: |
-        DOCKER_IMAGE=ghcr.io/ssup2-playground/dagster-pipeline-test
+        DOCKER_IMAGE=ghcr.io/ssup2-playground/k8s-data-platform-dagster-workflows
         DOCKER_PLATFORMS=linux/amd64,linux/arm64
         VERSION=""
         if [[ $GITHUB_REF == refs/tags/* ]]; then
