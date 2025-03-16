@@ -26,6 +26,7 @@ dagster-celery-k8s==0.26.5
 dagster-graphql==1.10.5
 dagster-k8s==0.26.5
 dagster-pipes==1.10.5
+dagster-postgres==0.26.5
 dagster-webserver==1.10.5
 docstring_parser==0.16
 durationpy==0.9
@@ -65,6 +66,7 @@ pillow==11.1.0
 prompt_toolkit==3.0.50
 propcache==0.2.1
 protobuf==5.29.3
+psycopg2-binary==2.9.9
 pyarrow==13.0.0
 pyasn1==0.6.1
 pyasn1_modules==0.4.1
