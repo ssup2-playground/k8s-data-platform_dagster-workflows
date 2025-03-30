@@ -9,6 +9,7 @@ from dagster import asset
             "container_config": {
                 "resources": {
                     "requests": {"cpu": "2000m", "memory": "4096Mi"},
+                    "limits": {"cpu": "2000m", "memory": "4096Mi"},
                 }
             },
         }
@@ -25,6 +26,7 @@ def generated_numbers():
             "container_config": {
                 "resources": {
                     "requests": {"cpu": "2000m", "memory": "4096Mi"},
+                    "limits": {"cpu": "2000m", "memory": "4096Mi"},
                 }
             },
         }
@@ -41,6 +43,7 @@ def filtered_even_numbers(generated_numbers):
             "container_config": {
                 "resources": {
                     "requests": {"cpu": "2000m", "memory": "4096Mi"},
+                    "limits": {"cpu": "2000m", "memory": "4096Mi"},
                 }
             },
         }
@@ -57,6 +60,7 @@ def filtered_odd_numbers(generated_numbers):
             "container_config": {
                 "resources": {
                     "requests": {"cpu": "2000m", "memory": "4096Mi"},
+                    "limits": {"cpu": "2000m", "memory": "4096Mi"},
                 }
             },
         }
@@ -73,6 +77,7 @@ def summed_even_numbers(filtered_even_numbers):
             "container_config": {
                 "resources": {
                     "requests": {"cpu": "2000m", "memory": "4096Mi"},
+                    "limits": {"cpu": "2000m", "memory": "4096Mi"},
                 }
             },
         }
@@ -89,6 +94,7 @@ def summed_odd_numbers(filtered_odd_numbers):
             "container_config": {
                 "resources": {
                     "requests": {"cpu": "2000m", "memory": "4096Mi"},
+                    "limits": {"cpu": "2000m", "memory": "4096Mi"},
                 }
             },
         }
