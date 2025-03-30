@@ -8,7 +8,7 @@ from dagster import asset
         "dagster-k8s/config": {
             "container_config": {
                 "resources": {
-                    "requests": {"cpu": "250m", "memory": "256Mi"},
+                    "requests": {"cpu": "2000m", "memory": "4096Mi"},
                 }
             },
         }
@@ -24,7 +24,7 @@ def generated_numbers():
         "dagster-k8s/config": {
             "container_config": {
                 "resources": {
-                    "requests": {"cpu": "250m", "memory": "256Mi"},
+                    "requests": {"cpu": "2000m", "memory": "4096Mi"},
                 }
             },
         }
@@ -40,7 +40,7 @@ def filtered_even_numbers(generated_numbers):
         "dagster-k8s/config": {
             "container_config": {
                 "resources": {
-                    "requests": {"cpu": "250m", "memory": "256Mi"},
+                    "requests": {"cpu": "2000m", "memory": "4096Mi"},
                 }
             },
         }
@@ -56,7 +56,7 @@ def filtered_odd_numbers(generated_numbers):
         "dagster-k8s/config": {
             "container_config": {
                 "resources": {
-                    "requests": {"cpu": "250m", "memory": "256Mi"},
+                    "requests": {"cpu": "2000m", "memory": "4096Mi"},
                 }
             },
         }
@@ -72,7 +72,7 @@ def summed_even_numbers(filtered_even_numbers):
         "dagster-k8s/config": {
             "container_config": {
                 "resources": {
-                    "requests": {"cpu": "250m", "memory": "256Mi"},
+                    "requests": {"cpu": "2000m", "memory": "4096Mi"},
                 }
             },
         }
@@ -88,7 +88,7 @@ def summed_odd_numbers(filtered_odd_numbers):
         "dagster-k8s/config": {
             "container_config": {
                 "resources": {
-                    "requests": {"cpu": "250m", "memory": "256Mi"},
+                    "requests": {"cpu": "2000m", "memory": "4096Mi"},
                 }
             },
         }

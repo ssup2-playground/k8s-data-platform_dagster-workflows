@@ -6,7 +6,7 @@ from dagster import op
         "dagster-k8s/config": {
             "container_config": {
                 "resources": {
-                    "requests": {"cpu": "250m", "memory": "256Mi"},
+                    "requests": {"cpu": "2000m", "memory": "4096Mi"},
                 }
             },
         }
@@ -20,7 +20,7 @@ def generate_numbers():
         "dagster-k8s/config": {
             "container_config": {
                 "resources": {
-                    "requests": {"cpu": "250m", "memory": "256Mi"},
+                    "requests": {"cpu": "2000m", "memory": "4096Mi"},
                 }
             },
         }
@@ -34,7 +34,7 @@ def filter_even_numbers(numbers):
         "dagster-k8s/config": {
             "container_config": {
                 "resources": {
-                    "requests": {"cpu": "250m", "memory": "256Mi"},
+                    "requests": {"cpu": "2000m", "memory": "4096Mi"},
                 }
             },
         }
@@ -48,7 +48,7 @@ def filter_odd_numbers(numbers):
         "dagster-k8s/config": {
             "container_config": {
                 "resources": {
-                    "requests": {"cpu": "250m", "memory": "256Mi"},
+                    "requests": {"cpu": "2000m", "memory": "4096Mi"},
                 }
             },
         }
@@ -62,7 +62,7 @@ def sum_even_numbers(numbers):
         "dagster-k8s/config": {
             "container_config": {
                 "resources": {
-                    "requests": {"cpu": "250m", "memory": "256Mi"},
+                    "requests": {"cpu": "2000m", "memory": "4096Mi"},
                 }
             },
         }
@@ -76,7 +76,7 @@ def sum_odd_numbers(numbers):
         "dagster-k8s/config": {
             "container_config": {
                 "resources": {
-                    "requests": {"cpu": "250m", "memory": "256Mi"},
+                    "requests": {"cpu": "2000m", "memory": "4096Mi"},
                 }
             },
         }

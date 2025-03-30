@@ -8,7 +8,7 @@ from dagster import asset
         "dagster-k8s/config": {
             "container_config": {
                 "resources": {
-                    "requests": {"cpu": "250m", "memory": "256Mi"},
+                    "requests": {"cpu": "2000m", "memory": "4096Mi"},
                 }
             },
         }
@@ -24,7 +24,7 @@ def generated_fruits_words():
         "dagster-k8s/config": {
             "container_config": { 
                 "resources": {
-                    "requests": {"cpu": "250m", "memory": "256Mi"},
+                    "requests": {"cpu": "2000m", "memory": "4096Mi"},
                 }
             },
         }
@@ -40,7 +40,7 @@ def generated_animals_words():
         "dagster-k8s/config": {
             "container_config": {
                 "resources": {
-                    "requests": {"cpu": "250m", "memory": "256Mi"},
+                    "requests": {"cpu": "2000m", "memory": "4096Mi"},
                 }
             },
         }
