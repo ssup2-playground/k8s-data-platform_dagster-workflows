@@ -3,7 +3,7 @@ from dagster import Definitions
 from workflows.configs import get_io_manager
 
 from workflows.numbers.jobs import process_numbers, process_numbers_k8s, process_numbers_k8s_celery, process_numbers_asset, process_numbers_asset_k8s, process_numbers_asset_k8s_celery
-from workflows.numbers.assets import generated_numbers, filtered_even_numbers, filtered_odd_numbers, summed_even_numbers, summed_odd_numbers, summed_two_numbers
+from workflows.numbers.assets import generated_numbers, filtered_even_numbers, filtered_odd_numbers, summed_even_numbers, summed_odd_numbers, summed_two_sums
 from workflows.numbers.schedules import process_numbers_every_minute, process_numbers_k8s_every_minute, process_numbers_celery_every_minute, process_numbers_asset_every_minute, process_numbers_asset_k8s_every_minute, process_numbers_asset_k8s_celery_every_minute
 
 from workflows.words.jobs import process_words_asset, process_words_asset_k8s
@@ -18,7 +18,7 @@ defs = Definitions(
         filtered_odd_numbers,
         summed_even_numbers,
         summed_odd_numbers,
-        summed_two_numbers,
+        summed_two_sums,
 
         # Words
         generated_fruits_words,

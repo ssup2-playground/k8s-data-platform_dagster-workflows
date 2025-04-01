@@ -2,7 +2,7 @@ from dagster import job, define_asset_job, AssetSelection
 from dagster_k8s import k8s_job_executor
 from dagster_celery_k8s import celery_k8s_job_executor
 
-from workflows.numbers.ops import generate_numbers, filter_even_numbers, filter_odd_numbers, sum_even_numbers, sum_odd_numbers, sum_two_numbers
+from workflows.numbers.ops import generate_numbers, filter_even_numbers, filter_odd_numbers, sum_even_numbers, sum_odd_numbers, sum_two_sums
 
 # Process numbers with multi processes
 @job(tags={
@@ -25,7 +25,7 @@ def process_numbers():
     even_sum = sum_even_numbers(even_numbers)
     odd_sum = sum_odd_numbers(odd_numbers)
 
-    sum_two_numbers(even_sum, odd_sum)
+    sum_two_sums(even_sum, odd_sum)
 
 # Process numbers with multiple k8s pods
 @job(executor_def=k8s_job_executor,
@@ -49,7 +49,7 @@ def process_numbers_k8s():
     even_sum = sum_even_numbers(even_numbers)
     odd_sum = sum_odd_numbers(odd_numbers)
 
-    sum_two_numbers(even_sum, odd_sum)
+    sum_two_sums(even_sum, odd_sum)
 
 # Process numbers with multiple k8s pods and celery
 @job(executor_def=celery_k8s_job_executor,
@@ -73,7 +73,7 @@ def process_numbers_k8s_celery():
     even_sum = sum_even_numbers(even_numbers)
     odd_sum = sum_odd_numbers(odd_numbers)
 
-    sum_two_numbers(even_sum, odd_sum)
+    sum_two_sums(even_sum, odd_sum)
 
 # Process numbers with assets
 process_numbers_asset = define_asset_job(
