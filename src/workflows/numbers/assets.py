@@ -2,7 +2,7 @@ from dagster import asset
 
 @asset(key_prefix=["examples"], 
     group_name="numbers",
-    description="Generate a list of numbers from 1 to 10", 
+    description="Generated a list of numbers from 1 to 10", 
     kinds=["python"],
     op_tags={
         "dagster-k8s/config": {
@@ -19,7 +19,7 @@ def generated_numbers():
 
 @asset(key_prefix=["examples"],
     group_name="numbers",
-    description="Filter even numbers from the list", 
+    description="Filtered even numbers from the list", 
     kinds=["python"],
     op_tags={
         "dagster-k8s/config": {
@@ -36,7 +36,7 @@ def filtered_even_numbers(generated_numbers):
 
 @asset(key_prefix=["examples"],
     group_name="numbers",
-    description="Filter odd numbers from the list", 
+    description="Filtered odd numbers from the list", 
     kinds=["python"],
     op_tags={
         "dagster-k8s/config": {
@@ -53,7 +53,7 @@ def filtered_odd_numbers(generated_numbers):
 
 @asset(key_prefix=["examples"],
     group_name="numbers",
-    description="Calculate the sum of the even numbers", 
+    description="Summed the even numbers", 
     kinds=["python"],
     op_tags={
         "dagster-k8s/config": {
@@ -70,7 +70,7 @@ def summed_even_numbers(filtered_even_numbers):
 
 @asset(key_prefix=["examples"],
     group_name="numbers",
-    description="Calculate the sum of the odd numbers",
+    description="Summed the odd numbers",
     kinds=["python"],
     op_tags={
         "dagster-k8s/config": {
@@ -87,7 +87,7 @@ def summed_odd_numbers(filtered_odd_numbers):
 
 @asset(key_prefix=["examples"],
     group_name="numbers",
-    description="Sum the two sums",
+    description="Summed the two sums",
     kinds=["python"],
     op_tags={
         "dagster-k8s/config": {
@@ -99,5 +99,5 @@ def summed_odd_numbers(filtered_odd_numbers):
             },
         }
     })
-def summed_two_numbers(summed_even_numbers, summed_odd_numbers):
+def summed_two_sums(summed_even_numbers, summed_odd_numbers):
     return summed_even_numbers + summed_odd_numbers

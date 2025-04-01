@@ -45,7 +45,7 @@ def filter_even_numbers(numbers):
 def filter_odd_numbers(numbers):
     return [num for num in numbers if num % 2 != 0]
 
-@op(description="Calculate the sum of the given list of even numbers",
+@op(description="Sum the given list of even numbers",
     tags={
         "domain": "numbers",
         "dagster-k8s/config": {
@@ -60,7 +60,7 @@ def filter_odd_numbers(numbers):
 def sum_even_numbers(numbers):
     return sum(numbers)
 
-@op(description="Calculate the sum of the given list of odd numbers",
+@op(description="Sum the given list of odd numbers",
     tags={
         "domain": "numbers",
         "dagster-k8s/config": {
@@ -75,7 +75,7 @@ def sum_even_numbers(numbers):
 def sum_odd_numbers(numbers):
     return sum(numbers)
 
-@op(description="Sum two numbers",
+@op(description="Sum two sums",
     tags={
         "domain": "numbers",
         "dagster-k8s/config": {
@@ -87,5 +87,5 @@ def sum_odd_numbers(numbers):
             },
         }
     })
-def sum_two_numbers(first_number, second_number):
+def sum_two_sums(first_number, second_number):
     return first_number + second_number
