@@ -1,5 +1,7 @@
-from dagster import define_asset_job, AssetSelection
+from dagster import job, define_asset_job, AssetSelection
 from dagster_k8s import k8s_job_executor
+
+from workflows.words.ops import echo_hello_external_job_op, echo_goodbye_external_job_k8s
 
 # Process words with assets
 process_words_asset = define_asset_job(
@@ -33,3 +35,8 @@ process_words_asset_k8s = define_asset_job(
             }
         }
     })
+
+# Process words with external k8s job
+@job
+def process_words_echo_external_k8s_job():
+    echo_goodbye_external_job_k8s(echo_hello_external_job_op())
