@@ -10,6 +10,9 @@ from workflows.words.jobs import process_words_asset, process_words_asset_k8s, p
 from workflows.words.assets import generated_fruits_words, generated_animals_words, summed_words
 from workflows.words.schedules import process_words_asset_every_minute, process_words_asset_k8s_every_minute
 
+from workflows.weather.assets import fetched_southkorea_weather_data
+from workflows.weather.partitions import hourly_southkorea_weather_partitions
+
 defs = Definitions(
     assets=[
         # Numbers
@@ -24,6 +27,9 @@ defs = Definitions(
         generated_fruits_words,
         generated_animals_words,
         summed_words,
+
+        # Weather
+        fetched_southkorea_weather_data,
     ],
     jobs=[
         # Numbers
