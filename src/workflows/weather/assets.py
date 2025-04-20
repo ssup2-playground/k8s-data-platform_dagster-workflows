@@ -18,7 +18,14 @@ MINIO_DIRECTORY_SOUTHKOREA_HOURLY_PARQUET = "southkorea/hourly-parquet"
 ## Functions
 def get_object_name(directory: str, date: str, hour: str) -> str:
     '''Get object name'''
-    return directory + "/" + date[0:4] + "/" + date[4:6] + "/" + date[6:8] + "/" + hour.zfill(2) + ".parquet"
+    return (
+        f"{directory}/"
+        f"year={date[0:4]}/"
+        f"month={date[4:6]}/"
+        f"day={date[6:8]}/"
+        f"hour={hour.zfill(2)}/"
+        f"data.parquet"
+    )
 
 ## Assets
 @asset(
