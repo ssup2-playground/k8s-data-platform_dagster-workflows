@@ -17,11 +17,11 @@ IO_MANAGER_S3_PREFIX = os.getenv("IO_MANAGER_S3_PREFIX", "io-manager")
 WEATHER_SOUTHKOREA_API_KEY = os.getenv("WEATHER_SOUTHKOREA_API_KEY", "")
 
 # MinIO 
-def get_minio_client() -> Minio:
+def init_minio_client() -> Minio:
     return Minio(MINIO_ENDPOINT, MINIO_ACCESS_KEY, MINIO_SECRET_KEY, secure=False)
 
 # Dagster 
-def get_io_manager() -> dict:
+def init_io_manager() -> dict:
     if IO_MANAGER_TYPE == "s3":
         return {
             "io_manager": s3_pickle_io_manager.configured({

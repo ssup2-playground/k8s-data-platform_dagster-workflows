@@ -1,6 +1,6 @@
 from dagster import Definitions
 
-from workflows.configs import get_io_manager
+from workflows.configs import init_io_manager
 
 from workflows.numbers.jobs import process_numbers, process_numbers_k8s, process_numbers_k8s_celery, process_numbers_asset, process_numbers_asset_k8s, process_numbers_asset_k8s_celery
 from workflows.numbers.assets import generated_numbers, filtered_even_numbers, filtered_odd_numbers, summed_even_numbers, summed_odd_numbers, summed_two_sums
@@ -10,8 +10,7 @@ from workflows.words.jobs import process_words_asset, process_words_asset_k8s, p
 from workflows.words.assets import generated_fruits_words, generated_animals_words, summed_words
 from workflows.words.schedules import process_words_asset_every_minute, process_words_asset_k8s_every_minute
 
-from workflows.weather.assets import fetched_southkorea_weather_data
-from workflows.weather.partitions import hourly_southkorea_weather_partitions
+from workflows.weather.assets import fetched_southkorea_weather_csv_data, transformed_southkorea_weather_parquet_data
 
 defs = Definitions(
     assets=[
@@ -29,7 +28,8 @@ defs = Definitions(
         summed_words,
 
         # Weather
-        fetched_southkorea_weather_data,
+        fetched_southkorea_weather_csv_data,
+        transformed_southkorea_weather_parquet_data,
     ],
     jobs=[
         # Numbers
@@ -58,5 +58,5 @@ defs = Definitions(
         process_words_asset_every_minute,
         process_words_asset_k8s_every_minute,
     ],
-    resources=get_io_manager(),
+    resources=init_io_manager(),
 )
