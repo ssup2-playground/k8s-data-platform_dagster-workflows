@@ -2,6 +2,8 @@ import os
 
 from minio import Minio
 
+from pyiceberg.catalog.hive import HiveCatalog
+
 from dagster import fs_io_manager
 from dagster_aws.s3 import s3_pickle_io_manager, s3_resource
 
@@ -9,6 +11,8 @@ from dagster_aws.s3 import s3_pickle_io_manager, s3_resource
 MINIO_ENDPOINT = os.getenv("MINIO_ENDPOINT", "minio.minio:9000")
 MINIO_ACCESS_KEY = os.getenv("MINIO_ACCESS_KEY", "root")
 MINIO_SECRET_KEY = os.getenv("MINIO_SECRET_KEY", "root123!")
+
+ICEBERG_CATALOG_URI = os.getenv("ICEBERG_CATALOG_URI", "s3a://iceberg")
 
 IO_MANAGER_TYPE = os.getenv("IO_MANAGER_TYPE", "s3")
 IO_MANAGER_S3_BUCKET = os.getenv("IO_MANAGER_S3_BUCKET", "dagster")
@@ -19,6 +23,18 @@ WEATHER_SOUTHKOREA_API_KEY = os.getenv("WEATHER_SOUTHKOREA_API_KEY", "")
 # MinIO 
 def init_minio_client() -> Minio:
     return Minio(MINIO_ENDPOINT, MINIO_ACCESS_KEY, MINIO_SECRET_KEY, secure=False)
+
+# Iceberg
+def get_iceberg_catalog(iceberg_catalog_uri: str) -> HiveCatalog:
+    return HiveCatalog(
+        "weather_catalog",
+        **{
+            "uri": iceberg_catalog_uri,
+            "s3.endpoint": os.getenv("MINIO_ENDPOINT"),
+            "s3.access-key-id": os.getenv("MINIO_ACCESS_KEY"),
+            "s3.secret-access-key": os.getenv("MINIO_SECRET_KEY"),
+        }
+    )
 
 # Dagster 
 def init_io_manager() -> dict:

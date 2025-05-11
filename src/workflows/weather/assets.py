@@ -7,7 +7,7 @@ import pyarrow.parquet as pq
 
 from dagster import asset, AssetExecutionContext, Nothing
 
-from workflows.configs import get_southkorea_weather_api_key, init_minio_client
+from workflows.configs import get_southkorea_weather_api_key, init_minio_client, get_iceberg_catalog
 from workflows.weather.partitions import hourly_southkorea_weather_partitions
 from weather.southkorea import get_southkorea_weather_data
 
@@ -15,6 +15,9 @@ from weather.southkorea import get_southkorea_weather_data
 MINIO_BUCKET = "weather"
 MINIO_DIRECTORY_SOUTHKOREA_HOURLY_CSV = "southkorea/hourly-csv"
 MINIO_DIRECTORY_SOUTHKOREA_HOURLY_PARQUET = "southkorea/hourly-parquet"
+MINIO_DIRECTORY_SOUTHKOREA_HOURLY_ICEBERG_PARQUET = "southkorea/hourly-iceberg-parquet"
+
+ICEBERG_TABLE = "weather.southkorea_hourly_iceberg_parquet"
 
 ## Functions
 def get_hourly_csv_object_name(date: str, hour: str) -> str:
@@ -104,11 +107,8 @@ def transformed_southkorea_weather_parquet_data(context: AssetExecutionContext):
     request_date = dt.strftime("%Y%m%d")
     request_hour = dt.strftime("%H")
 
-    # Get object name
-    object_parquet_name = get_hourly_parquet_object_name(request_date, request_hour)
-    object_csv_name = get_hourly_csv_object_name(request_date, request_hour)
-
     # Check if data exists in MinIO
+    object_parquet_name = get_hourly_parquet_object_name(request_date, request_hour)
     try:
         minio_client.stat_object(MINIO_BUCKET, object_parquet_name)
         print("data already exists in minio")
@@ -119,6 +119,7 @@ def transformed_southkorea_weather_parquet_data(context: AssetExecutionContext):
             return 1
 
     # Get data
+    object_csv_name = get_hourly_csv_object_name(request_date, request_hour)
     csv_data = minio_client.get_object(bucket_name=MINIO_BUCKET,
                             object_name=object_csv_name)
 
@@ -134,3 +135,32 @@ def transformed_southkorea_weather_parquet_data(context: AssetExecutionContext):
                             object_name=object_parquet_name,
                             data=buffer,
                             length=buffer.getbuffer().nbytes)
+
+@asset(
+    key_prefix=["examples"],
+    group_name="weather",
+    description="Transform Parquet data to Iceberg table",
+    deps=[transformed_southkorea_weather_parquet_data],
+    partitions_def=hourly_southkorea_weather_partitions,
+    kinds=["python"],
+)
+def transformed_southkorea_weather_iceberg_parquet_data(context: AssetExecutionContext):
+    # Init MinIO client
+    minio_client = init_minio_client()
+    
+    # Get date and hour
+    partition_date_hour = context.partition_key
+    dt = datetime.strptime(partition_date_hour, "%Y-%m-%d-%H:%M")
+    request_date = dt.strftime("%Y%m%d")
+    request_hour = dt.strftime("%H")
+
+    # Get data
+    object_parquet_name = get_hourly_parquet_object_name(request_date, request_hour)
+    parquet_data = minio_client.get_object(bucket_name=MINIO_BUCKET,
+                                         object_name=object_parquet_name)
+
+    # Write to Iceberg table
+    catalog = get_iceberg_catalog(MINIO_DIRECTORY_SOUTHKOREA_HOURLY_ICEBERG_PARQUET)
+    table = catalog.load_table(ICEBERG_TABLE)
+    df = pd.read_parquet(parquet_data)
+    table.append(df)
