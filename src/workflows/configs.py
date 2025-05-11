@@ -27,15 +27,15 @@ def init_minio_client() -> Minio:
 # Iceberg
 def get_iceberg_catalog() -> HiveCatalog:
     return HiveCatalog(
-        "weather_catalog",
+        "default",
         **{
             "uri": HIVE_CATALOG_URI,
-            "s3.endpoint": os.getenv("MINIO_ENDPOINT"),
-            "s3.access-key-id": os.getenv("MINIO_ACCESS_KEY"),
-            "s3.secret-access-key": os.getenv("MINIO_SECRET_KEY"),
-            #"hive.hive2-compatible": True
+            "s3.endpoint": f"http://{MINIO_ENDPOINT}",
+            "s3.access-key-id": MINIO_ACCESS_KEY,
+            "s3.secret-access-key": MINIO_SECRET_KEY,
+            "hive.hive2-compatible": True
         }
-    )
+    ) 
 
 # Dagster 
 def init_io_manager() -> dict:

@@ -154,13 +154,42 @@ def transformed_southkorea_weather_iceberg_parquet_data(context: AssetExecutionC
     request_date = dt.strftime("%Y%m%d")
     request_hour = dt.strftime("%H")
 
-    # Get data
+    # Get data and convert directly to PyArrow Table
     object_parquet_name = get_hourly_parquet_object_name(request_date, request_hour)
     parquet_data = minio_client.get_object(bucket_name=MINIO_BUCKET,
                                          object_name=object_parquet_name)
+    
+    # Read directly as PyArrow Table
+    buffer = io.BytesIO(parquet_data.read())
+    buffer.seek(0)
+    table = pq.read_table(buffer)
+    
+    # Convert types to match Iceberg schema
+    table = table.cast(pa.schema([
+        ('branch_name', pa.string()),
+        ('temp', pa.float64()),
+        ('rain', pa.float64()),
+        ('snow', pa.float64()),
+        ('cloud_cover_total', pa.int32()),
+        ('cloud_cover_lowmiddle', pa.int32()),
+        ('cloud_lowest', pa.int32()),
+        ('cloud_shape', pa.string()),
+        ('humidity', pa.int32()),
+        ('wind_speed', pa.float64()),
+        ('wind_direction', pa.string()),
+        ('pressure_local', pa.float64()),
+        ('pressure_sea', pa.float64()),
+        ('pressure_vaper', pa.float64()),
+        ('dew_point', pa.float64()),
+    ]))
+    
+    # Add partition columns with correct types
+    table = table.append_column('year', pa.array([int(request_date[0:4])] * len(table), type=pa.int32()))
+    table = table.append_column('month', pa.array([int(request_date[4:6])] * len(table), type=pa.int32()))
+    table = table.append_column('day', pa.array([int(request_date[6:8])] * len(table), type=pa.int32()))
+    table = table.append_column('hour', pa.array([int(request_hour.zfill(2))] * len(table), type=pa.int32()))
 
     # Write to Iceberg table
     catalog = get_iceberg_catalog()
-    table = catalog.load_table(ICEBERG_TABLE)
-    df = pd.read_parquet(parquet_data)
-    table.append(df)
+    iceberg_table = catalog.load_table(ICEBERG_TABLE)
+    iceberg_table.append(table)
