@@ -160,7 +160,7 @@ def transformed_southkorea_weather_iceberg_parquet_data(context: AssetExecutionC
                                          object_name=object_parquet_name)
 
     # Write to Iceberg table
-    catalog = get_iceberg_catalog(MINIO_DIRECTORY_SOUTHKOREA_HOURLY_ICEBERG_PARQUET)
+    catalog = get_iceberg_catalog()
     table = catalog.load_table(ICEBERG_TABLE)
     df = pd.read_parquet(parquet_data)
     table.append(df)
