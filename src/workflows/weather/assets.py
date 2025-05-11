@@ -154,6 +154,25 @@ def transformed_southkorea_weather_iceberg_parquet_data(context: AssetExecutionC
     request_date = dt.strftime("%Y%m%d")
     request_hour = dt.strftime("%H")
 
+    # Get Iceberg table
+    catalog = get_iceberg_catalog()
+    iceberg_table = catalog.load_table(ICEBERG_TABLE)
+
+    # Check if partition data exists
+    year = int(request_date[0:4])
+    month = int(request_date[4:6])
+    day = int(request_date[6:8])
+    hour = int(request_hour.zfill(2))
+    
+    # Count records in the partition
+    partition_count = iceberg_table.scan(
+        row_filter=f"year = {year} AND month = {month} AND day = {day} AND hour = {hour}"
+    ).to_arrow().num_rows
+    
+    if partition_count > 0:
+        context.log.info(f"Data for partition year={year}, month={month}, day={day}, hour={hour} already exists. Skipping insert.")
+        return
+
     # Get data and convert directly to PyArrow Table
     object_parquet_name = get_hourly_parquet_object_name(request_date, request_hour)
     parquet_data = minio_client.get_object(bucket_name=MINIO_BUCKET,
@@ -189,7 +208,6 @@ def transformed_southkorea_weather_iceberg_parquet_data(context: AssetExecutionC
     table = table.append_column('day', pa.array([int(request_date[6:8])] * len(table), type=pa.int32()))
     table = table.append_column('hour', pa.array([int(request_hour.zfill(2))] * len(table), type=pa.int32()))
 
-    # Write to Iceberg table
-    catalog = get_iceberg_catalog()
-    iceberg_table = catalog.load_table(ICEBERG_TABLE)
+    # Append the data
+    context.log.info(f"Inserting data for partition year={year}, month={month}, day={day}, hour={hour}")
     iceberg_table.append(table)
