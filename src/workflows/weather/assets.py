@@ -7,7 +7,7 @@ import pyarrow.parquet as pq
 
 from dagster import asset, AssetExecutionContext, Nothing
 
-from workflows.configs import get_southkorea_weather_api_key, init_minio_client, get_iceberg_catalog
+from workflows.configs import get_southkorea_weather_api_key, get_minio_client, get_iceberg_catalog
 from workflows.weather.partitions import hourly_southkorea_weather_partitions
 from weather.southkorea import get_southkorea_weather_data
 
@@ -20,25 +20,29 @@ MINIO_DIRECTORY_SOUTHKOREA_HOURLY_ICEBERG_PARQUET = "southkorea/hourly-iceberg-p
 ICEBERG_TABLE = "weather.southkorea_hourly_iceberg_parquet"
 
 ## Functions
-def get_hourly_csv_object_name(date: str, hour: str) -> str:
+def get_partition_datetime(partition_key: str) -> datetime:
+    '''Convert partition key to datetime object'''
+    return datetime.strptime(partition_key, "%Y-%m-%d-%H:%M")
+
+def get_hourly_csv_object_name(dt: datetime) -> str:
     '''Get object name'''
     return (
         f"{MINIO_DIRECTORY_SOUTHKOREA_HOURLY_CSV}/"
-        f"year={date[0:4]}/"
-        f"month={date[4:6]}/"
-        f"day={date[6:8]}/"
-        f"hour={hour.zfill(2)}/"
+        f"year={dt.strftime('%Y')}/"
+        f"month={dt.strftime('%m')}/"
+        f"day={dt.strftime('%d')}/"
+        f"hour={dt.strftime('%H')}/"
         f"data.csv"
     )
 
-def get_hourly_parquet_object_name(date: str, hour: str) -> str:
+def get_hourly_parquet_object_name(dt: datetime) -> str:
     '''Get object name'''
     return (
         f"{MINIO_DIRECTORY_SOUTHKOREA_HOURLY_PARQUET}/"
-        f"year={date[0:4]}/"
-        f"month={date[4:6]}/"
-        f"day={date[6:8]}/"
-        f"hour={hour.zfill(2)}/"
+        f"year={dt.strftime('%Y')}/"
+        f"month={dt.strftime('%m')}/"
+        f"day={dt.strftime('%d')}/"
+        f"hour={dt.strftime('%H')}/"
         f"data.parquet"
     )
 
@@ -51,19 +55,12 @@ def get_hourly_parquet_object_name(date: str, hour: str) -> str:
     kinds=["python"],
 )
 def fetched_southkorea_weather_csv_data(context: AssetExecutionContext):
-    # Init MinIO client
-    minio_client = init_minio_client()
+    # Init variables
+    minio_client = get_minio_client()
+    dt = get_partition_datetime(context.partition_key)
     
-    # Get date and hour
-    partition_date_hour = context.partition_key  # format: "2023-01-01-00:00"
-    dt = datetime.strptime(partition_date_hour, "%Y-%m-%d-%H:%M")
-    request_date = dt.strftime("%Y%m%d")
-    request_hour = dt.strftime("%H")
-
-    # Get object name
-    object_csv_name = get_hourly_csv_object_name(request_date, request_hour)
-
     # Check if data exists in MinIO
+    object_csv_name = get_hourly_csv_object_name(dt)
     try:
         minio_client.stat_object(MINIO_BUCKET, object_csv_name)
         print("data already exists in minio")
@@ -75,7 +72,7 @@ def fetched_southkorea_weather_csv_data(context: AssetExecutionContext):
 
     # Get data
     api_key = get_southkorea_weather_api_key()
-    data = get_southkorea_weather_data(api_key, request_date, request_hour)
+    data = get_southkorea_weather_data(api_key, dt)
 
     # Convert to Parquet
     dataframe = pd.DataFrame(data)
@@ -98,17 +95,12 @@ def fetched_southkorea_weather_csv_data(context: AssetExecutionContext):
     kinds=["python"],
 )
 def transformed_southkorea_weather_parquet_data(context: AssetExecutionContext):
-    # Init MinIO client
-    minio_client = init_minio_client()
-    
-    # Get date and hour
-    partition_date_hour = context.partition_key  # format: "2023-01-01-00:00"
-    dt = datetime.strptime(partition_date_hour, "%Y-%m-%d-%H:%M")
-    request_date = dt.strftime("%Y%m%d")
-    request_hour = dt.strftime("%H")
+    # Init variables
+    minio_client = get_minio_client()
+    dt = get_partition_datetime(context.partition_key)
 
     # Check if data exists in MinIO
-    object_parquet_name = get_hourly_parquet_object_name(request_date, request_hour)
+    object_parquet_name = get_hourly_parquet_object_name(dt)
     try:
         minio_client.stat_object(MINIO_BUCKET, object_parquet_name)
         print("data already exists in minio")
@@ -118,8 +110,8 @@ def transformed_southkorea_weather_parquet_data(context: AssetExecutionContext):
             print("Unexpected error : {0}".format(e))
             return 1
 
-    # Get data
-    object_csv_name = get_hourly_csv_object_name(request_date, request_hour)
+    # Get CSV data
+    object_csv_name = get_hourly_csv_object_name(dt)
     csv_data = minio_client.get_object(bucket_name=MINIO_BUCKET,
                             object_name=object_csv_name)
 
@@ -145,40 +137,28 @@ def transformed_southkorea_weather_parquet_data(context: AssetExecutionContext):
     kinds=["python"],
 )
 def transformed_southkorea_weather_iceberg_parquet_data(context: AssetExecutionContext):
-    # Init MinIO client
-    minio_client = init_minio_client()
+    # Init variables
+    minio_client = get_minio_client()
+    dt = get_partition_datetime(context.partition_key)
     
-    # Get date and hour
-    partition_date_hour = context.partition_key
-    dt = datetime.strptime(partition_date_hour, "%Y-%m-%d-%H:%M")
-    request_date = dt.strftime("%Y%m%d")
-    request_hour = dt.strftime("%H")
-
     # Get Iceberg table
     catalog = get_iceberg_catalog()
     iceberg_table = catalog.load_table(ICEBERG_TABLE)
 
     # Check if partition data exists
-    year = int(request_date[0:4])
-    month = int(request_date[4:6])
-    day = int(request_date[6:8])
-    hour = int(request_hour.zfill(2))
-    
-    # Count records in the partition
     partition_count = iceberg_table.scan(
-        row_filter=f"year = {year} AND month = {month} AND day = {day} AND hour = {hour}"
+        row_filter=f"year = {dt.year} AND month = {dt.month} AND day = {dt.day} AND hour = {dt.hour}"
     ).to_arrow().num_rows
-    
     if partition_count > 0:
-        context.log.info(f"Data for partition year={year}, month={month}, day={day}, hour={hour} already exists. Skipping insert.")
+        context.log.info(f"Data for partition year={dt.year}, month={dt.month}, day={dt.day}, hour={dt.hour} already exists. Skipping insert.")
         return
 
-    # Get data and convert directly to PyArrow Table
-    object_parquet_name = get_hourly_parquet_object_name(request_date, request_hour)
+    # Get Parquet data and convert directly to PyArrow table
+    object_parquet_name = get_hourly_parquet_object_name(dt)
     parquet_data = minio_client.get_object(bucket_name=MINIO_BUCKET,
                                          object_name=object_parquet_name)
     
-    # Read directly as PyArrow Table
+    # Read Parquet data as PyArrow table
     buffer = io.BytesIO(parquet_data.read())
     buffer.seek(0)
     table = pq.read_table(buffer)
@@ -203,11 +183,11 @@ def transformed_southkorea_weather_iceberg_parquet_data(context: AssetExecutionC
     ]))
     
     # Add partition columns with correct types
-    table = table.append_column('year', pa.array([int(request_date[0:4])] * len(table), type=pa.int32()))
-    table = table.append_column('month', pa.array([int(request_date[4:6])] * len(table), type=pa.int32()))
-    table = table.append_column('day', pa.array([int(request_date[6:8])] * len(table), type=pa.int32()))
-    table = table.append_column('hour', pa.array([int(request_hour.zfill(2))] * len(table), type=pa.int32()))
+    table = table.append_column('year', pa.array([dt.year] * len(table), type=pa.int32()))
+    table = table.append_column('month', pa.array([dt.month] * len(table), type=pa.int32()))
+    table = table.append_column('day', pa.array([dt.day] * len(table), type=pa.int32()))
+    table = table.append_column('hour', pa.array([dt.hour] * len(table), type=pa.int32()))
 
     # Append the data
-    context.log.info(f"Inserting data for partition year={year}, month={month}, day={day}, hour={hour}")
+    context.log.info(f"Inserting data for partition year={dt.year}, month={dt.month}, day={dt.day}, hour={dt.hour}")
     iceberg_table.append(table)

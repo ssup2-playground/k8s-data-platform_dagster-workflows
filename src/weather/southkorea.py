@@ -1,7 +1,7 @@
-import os
 import time
 import itertools
 import requests
+from datetime import datetime
 
 ## Constants
 DATA_URL = "http://apis.data.go.kr/1360000/AsosHourlyInfoService/getWthrDataList"
@@ -143,10 +143,6 @@ def get_request_params(data_key: str, branch_id:str, date: str, hour: str) -> di
     }
     return request_params
 
-def get_object_name(directory: str, date: str, hour: str) -> str:
-    '''Get object name'''
-    return directory + "/" + date[0:4] + "/" + date[4:6] + "/" + date[6:8] + "/" + hour.zfill(2) + ".parquet"
-
 def convert_string_int(string: str) -> int:
     '''Convert type string to int'''
     if string == "":
@@ -165,7 +161,12 @@ def convert_wd_code_name(code: str) -> str:
         return "NONE"
     return wind_direction_code_name[int(code)]
 
-def get_southkorea_weather_data(api_key: str, request_date: str, request_hour: str) -> dict:
+def get_southkorea_weather_data(api_key: str, dt: datetime) -> dict:
+    '''Get South Korea weather data'''
+    # Init variables
+    request_date = dt.strftime("%Y%m%d")
+    request_hour = dt.strftime("%H")
+
     # Get data
     branch_id_response = {}
     for branch_id in branch_id_name:
