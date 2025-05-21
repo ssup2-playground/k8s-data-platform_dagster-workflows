@@ -9,6 +9,7 @@ from dagster import asset, AssetExecutionContext, Nothing
 
 from workflows.configs import get_southkorea_weather_api_key, get_minio_client, get_iceberg_catalog
 from workflows.weather.partitions import hourly_southkorea_weather_partitions
+from weather.iceberg import retry_append_table
 from weather.southkorea import get_southkorea_weather_data
 
 ## Constants
@@ -189,5 +190,7 @@ def transformed_southkorea_weather_iceberg_parquet_data(context: AssetExecutionC
     table = table.append_column('hour', pa.array([dt.hour] * len(table), type=pa.int32()))
 
     # Append the data
-    context.log.info(f"Inserting data for partition year={dt.year}, month={dt.month}, day={dt.day}, hour={dt.hour}")
-    iceberg_table.append(table)
+    error = retry_append_table(iceberg_table, table)
+    if error:
+        context.log.error(f"Failed to insert data for partition year={dt.year}, month={dt.month}, day={dt.day}, hour={dt.hour}")
+        raise error
