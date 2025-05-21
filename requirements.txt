@@ -41,7 +41,7 @@ durationpy==0.9
 exceptiongroup==1.2.2
 filelock==3.17.0
 frozenlist==1.6.0
-fsspec==2025.2.0
+fsspec==2025.3.2
 google-auth==2.38.0
 gql==3.5.2
 graphene==3.4.3
