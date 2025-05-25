@@ -12,6 +12,7 @@ from workflows.words.schedules import process_words_asset_every_minute, process_
 
 from workflows.weather.assets import fetched_southkorea_weather_csv_data, transformed_southkorea_weather_parquet_data, transformed_southkorea_weather_iceberg_parquet_data
 from workflows.weather.jobs import process_weather_southkorea
+from workflows.weather.schedules import process_weather_southkorea_every_hour
 
 defs = Definitions(
     assets=[
@@ -62,6 +63,9 @@ defs = Definitions(
         # Words
         process_words_asset_every_minute,
         process_words_asset_k8s_every_minute,
+
+        # Weather
+        process_weather_southkorea_every_hour,
     ],
     resources=init_io_manager(),
 )
