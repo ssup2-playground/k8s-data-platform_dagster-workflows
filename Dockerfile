@@ -9,3 +9,5 @@ RUN uv sync
 
 COPY ./src/workflows workflows
 COPY ./src/weather weather
+
+ENV PATH="/app/.venv/bin:${PATH}"
