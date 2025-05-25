@@ -3,7 +3,7 @@ from dagster import define_asset_job, AssetSelection
 # Process numbers with assets
 process_weather_southkorea = define_asset_job(
     name="process_weather_southkorea",
-    selection=AssetSelection.groups("southkorea"),
+    selection=AssetSelection.groups("weather"),
     tags={
         "domain": "weather",
         "no-concurrency": "weather-southkorea",
@@ -19,3 +19,4 @@ process_weather_southkorea = define_asset_job(
     run_tags={
         "no-concurrency": "weather-southkorea",
     }
+)
