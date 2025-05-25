@@ -4,11 +4,12 @@ from datetime import datetime
 import pandas as pd
 import pyarrow as pa
 import pyarrow.parquet as pq
+import pyarrow.compute as pc
 
-from dagster import asset, AssetExecutionContext
+from dagster import asset, AssetExecutionContext, AutomationCondition
 
 from workflows.configs import get_southkorea_weather_api_key, init_minio_client, get_iceberg_catalog
-from workflows.weather.partitions import hourly_southkorea_weather_partitions
+from workflows.weather.partitions import hourly_southkorea_weather_partitions, daily_southkorea_weather_partitions
 from weather.southkorea import get_southkorea_weather_data
 
 ## Constants
@@ -16,12 +17,14 @@ MINIO_BUCKET = "weather"
 MINIO_DIRECTORY_SOUTHKOREA_HOURLY_CSV = "southkorea/hourly-csv"
 MINIO_DIRECTORY_SOUTHKOREA_HOURLY_PARQUET = "southkorea/hourly-parquet"
 MINIO_DIRECTORY_SOUTHKOREA_HOURLY_ICEBERG_PARQUET = "southkorea/hourly-iceberg-parquet"
+MINIO_DIRECTORY_SOUTHKOREA_DAILY_CSV = "southkorea/daily-csv"
+MINIO_DIRECTORY_SOUTHKOREA_DAILY_PARQUET = "southkorea/daily-parquet"
 
 ICEBERG_TABLE = "weather.southkorea_hourly_iceberg_parquet"
 
 ## Functions
 def get_hourly_csv_object_name(date: str, hour: str) -> str:
-    '''Get object name'''
+    '''Get hourly csv object name'''
     return (
         f"{MINIO_DIRECTORY_SOUTHKOREA_HOURLY_CSV}/"
         f"year={date[0:4]}/"
@@ -32,13 +35,33 @@ def get_hourly_csv_object_name(date: str, hour: str) -> str:
     )
 
 def get_hourly_parquet_object_name(date: str, hour: str) -> str:
-    '''Get object name'''
+    '''Get hourly parquet object name'''
     return (
         f"{MINIO_DIRECTORY_SOUTHKOREA_HOURLY_PARQUET}/"
         f"year={date[0:4]}/"
         f"month={date[4:6]}/"
         f"day={date[6:8]}/"
         f"hour={hour.zfill(2)}/"
+        f"data.parquet"
+    )
+
+def get_daily_csv_object_name(date: str) -> str:
+    '''Get daily csv object name'''
+    return (
+        f"{MINIO_DIRECTORY_SOUTHKOREA_DAILY_CSV}/"
+        f"year={date[0:4]}/"
+        f"month={date[4:6]}/"
+        f"day={date[6:8]}/"
+        f"data.csv"
+    )
+
+def get_daily_parquet_object_name(date: str) -> str:
+    '''Get daily parquet object name'''
+    return (
+        f"{MINIO_DIRECTORY_SOUTHKOREA_DAILY_PARQUET}/"
+        f"year={date[0:4]}/"
+        f"month={date[4:6]}/"
+        f"day={date[6:8]}/"
         f"data.parquet"
     )
 
@@ -50,7 +73,7 @@ def get_hourly_parquet_object_name(date: str, hour: str) -> str:
     partitions_def=hourly_southkorea_weather_partitions,
     kinds=["python"],
 )
-def fetched_southkorea_weather_csv_data(context: AssetExecutionContext):
+def fetched_southkorea_weather_hourly_csv(context: AssetExecutionContext):
     # Init MinIO client
     minio_client = init_minio_client()
     
@@ -93,11 +116,11 @@ def fetched_southkorea_weather_csv_data(context: AssetExecutionContext):
     key_prefix=["weather"],
     group_name="weather",
     description="Fetched South Korea weather data in Parquet format",
-    deps=[fetched_southkorea_weather_csv_data],
+    deps=[fetched_southkorea_weather_hourly_csv],
     partitions_def=hourly_southkorea_weather_partitions,
     kinds=["python"],
 )
-def transformed_southkorea_weather_parquet_data(context: AssetExecutionContext):
+def transformed_southkorea_weather_hourly_parquet(context: AssetExecutionContext):
     # Init MinIO client
     minio_client = init_minio_client()
     
@@ -140,11 +163,11 @@ def transformed_southkorea_weather_parquet_data(context: AssetExecutionContext):
     key_prefix=["weather"],
     group_name="weather",
     description="Transform Parquet data to Iceberg table",
-    deps=[transformed_southkorea_weather_parquet_data],
+    deps=[transformed_southkorea_weather_hourly_parquet],
     partitions_def=hourly_southkorea_weather_partitions,
     kinds=["python"],
 )
-def transformed_southkorea_weather_iceberg_parquet_data(context: AssetExecutionContext):
+def transformed_southkorea_weather_hourly_iceberg_parquet(context: AssetExecutionContext):
     # Init MinIO client
     minio_client = init_minio_client()
     
@@ -193,3 +216,71 @@ def transformed_southkorea_weather_iceberg_parquet_data(context: AssetExecutionC
     catalog = get_iceberg_catalog()
     iceberg_table = catalog.load_table(ICEBERG_TABLE)
     iceberg_table.append(table)
+
+@asset(
+    key_prefix=["weather"],
+    group_name="weather",
+    description="Aggregate hourly weather data to daily data in CSV format",
+    deps=[fetched_southkorea_weather_hourly_csv],
+    partitions_def=daily_southkorea_weather_partitions,
+    automation_condition=AutomationCondition.eager(),
+    kinds=["python"],
+)
+def transformed_southkorea_weather_daily_csv(context: AssetExecutionContext):
+    # Init MinIO client
+    minio_client = init_minio_client()
+    
+    # Get date from partition key
+    partition_date_hour = context.partition_key
+    dt = datetime.strptime(partition_date_hour, "%Y-%m-%d-%H:%M")
+    request_date = dt.strftime("%Y%m%d")
+    
+    # Check if daily data already exists
+    daily_csv_name = get_daily_csv_object_name(request_date)
+    try:
+        minio_client.stat_object(MINIO_BUCKET, daily_csv_name)
+        context.log.info(f"Daily data already exists for date {request_date}")
+        return 0
+    except Exception as e:
+        if "NoSuchKey" not in str(e):
+            context.log.error(f"Unexpected error: {e}")
+            return 1
+    
+    # Get all hourly data for the day
+    daily_data = []
+    for hour in range(24):
+        hour_str = f"{hour:02d}"
+        hourly_csv_name = get_hourly_csv_object_name(request_date, hour_str)
+        
+        try:
+            csv_data = minio_client.get_object(bucket_name=MINIO_BUCKET,
+                                             object_name=hourly_csv_name)
+            hourly_df = pd.read_csv(csv_data)
+            # Add hour column
+            hourly_df['hour'] = int(hour_str)
+            daily_data.append(hourly_df)
+        except Exception as e:
+            if "NoSuchKey" not in str(e):
+                context.log.error(f"Error reading hourly data for hour {hour}: {e}")
+            continue
+    
+    if not daily_data:
+        context.log.info(f"No hourly data found for date {request_date}")
+        return 0
+    
+    # Combine all hourly data
+    daily_df = pd.concat(daily_data, ignore_index=True)
+    daily_df = daily_df.sort_values(['branch_name', 'hour'])
+    
+    # Save as CSV
+    buffer = io.BytesIO()
+    daily_df.to_csv(buffer, index=False)
+    buffer.seek(0)
+    
+    # Write to MinIO
+    minio_client.put_object(
+        bucket_name=MINIO_BUCKET,
+        object_name=daily_csv_name,
+        data=buffer,
+        length=buffer.getbuffer().nbytes
+    )
