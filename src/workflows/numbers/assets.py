@@ -1,6 +1,6 @@
 from dagster import asset
 
-@asset(key_prefix=["examples"], 
+@asset(key_prefix=["numbers"], 
     group_name="numbers",
     description="Generated a list of numbers from 1 to 10", 
     kinds=["python"],
@@ -17,7 +17,7 @@ from dagster import asset
 def generated_numbers():
     return list(range(1, 11))
 
-@asset(key_prefix=["examples"],
+@asset(key_prefix=["numbers"],
     group_name="numbers",
     description="Filtered even numbers from the list", 
     kinds=["python"],
@@ -34,7 +34,7 @@ def generated_numbers():
 def filtered_even_numbers(generated_numbers):
     return [num for num in generated_numbers if num % 2 == 0]
 
-@asset(key_prefix=["examples"],
+@asset(key_prefix=["numbers"],
     group_name="numbers",
     description="Filtered odd numbers from the list", 
     kinds=["python"],
@@ -51,7 +51,7 @@ def filtered_even_numbers(generated_numbers):
 def filtered_odd_numbers(generated_numbers):
     return [num for num in generated_numbers if num % 2 != 0]
 
-@asset(key_prefix=["examples"],
+@asset(key_prefix=["numbers"],
     group_name="numbers",
     description="Summed the even numbers", 
     kinds=["python"],
@@ -68,7 +68,7 @@ def filtered_odd_numbers(generated_numbers):
 def summed_even_numbers(filtered_even_numbers):
     return sum(filtered_even_numbers)
 
-@asset(key_prefix=["examples"],
+@asset(key_prefix=["numbers"],
     group_name="numbers",
     description="Summed the odd numbers",
     kinds=["python"],
@@ -85,7 +85,7 @@ def summed_even_numbers(filtered_even_numbers):
 def summed_odd_numbers(filtered_odd_numbers):
     return sum(filtered_odd_numbers)
 
-@asset(key_prefix=["examples"],
+@asset(key_prefix=["numbers"],
     group_name="numbers",
     description="Summed the two sums",
     kinds=["python"],

@@ -44,8 +44,8 @@ def get_hourly_parquet_object_name(date: str, hour: str) -> str:
 
 ## Assets
 @asset(
-    key_prefix=["examples"],
-    group_name="weather",
+    key_prefix=["weather"],
+    group_name="southkorea",
     description="Fetched South Korea weather data in CSV format",
     partitions_def=hourly_southkorea_weather_partitions,
     kinds=["python"],
@@ -90,8 +90,8 @@ def fetched_southkorea_weather_csv_data(context: AssetExecutionContext):
                             length=buffer.getbuffer().nbytes)
 
 @asset(
-    key_prefix=["examples"],
-    group_name="weather",
+    key_prefix=["weather"],
+    group_name="southkorea",
     description="Fetched South Korea weather data in Parquet format",
     deps=[fetched_southkorea_weather_csv_data],
     partitions_def=hourly_southkorea_weather_partitions,
@@ -137,8 +137,8 @@ def transformed_southkorea_weather_parquet_data(context: AssetExecutionContext):
                             length=buffer.getbuffer().nbytes)
 
 @asset(
-    key_prefix=["examples"],
-    group_name="weather",
+    key_prefix=["weather"],
+    group_name="southkorea",
     description="Transform Parquet data to Iceberg table",
     deps=[transformed_southkorea_weather_parquet_data],
     partitions_def=hourly_southkorea_weather_partitions,
@@ -189,7 +189,7 @@ def transformed_southkorea_weather_iceberg_parquet_data(context: AssetExecutionC
     table = table.append_column('day', pa.array([int(request_date[6:8])] * len(table), type=pa.int32()))
     table = table.append_column('hour', pa.array([int(request_hour.zfill(2))] * len(table), type=pa.int32()))
 
-    # Write to Iceberg table
+    # Load Iceberg table and append data
     catalog = get_iceberg_catalog()
     iceberg_table = catalog.load_table(ICEBERG_TABLE)
     iceberg_table.append(table)

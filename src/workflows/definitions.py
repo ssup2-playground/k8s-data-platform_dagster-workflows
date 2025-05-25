@@ -11,6 +11,7 @@ from workflows.words.assets import generated_fruits_words, generated_animals_wor
 from workflows.words.schedules import process_words_asset_every_minute, process_words_asset_k8s_every_minute
 
 from workflows.weather.assets import fetched_southkorea_weather_csv_data, transformed_southkorea_weather_parquet_data, transformed_southkorea_weather_iceberg_parquet_data
+from workflows.weather.jobs import process_weather_southkorea
 
 defs = Definitions(
     assets=[
@@ -45,6 +46,9 @@ defs = Definitions(
         process_words_asset,
         process_words_asset_k8s,
         process_words_echo_external_k8s_job,
+
+        # Weather
+        process_weather_southkorea,
     ],
     schedules=[
         # Numbers

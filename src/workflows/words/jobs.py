@@ -12,7 +12,7 @@ process_words_asset = define_asset_job(
         "dagster-k8s/config": {
             "container_config": {
                 "resources": {
-                    "requests": {"cpu": "2000m", "memory": "4096Mi"},
+                    "requests": {"cpu": "1000m", "memory": "2048Mi"},
                     "limits": {"cpu": "2000m", "memory": "4096Mi"},
                 }
             }
@@ -29,7 +29,7 @@ process_words_asset_k8s = define_asset_job(
         "dagster-k8s/config": {
             "container_config": {
                 "resources": {
-                    "requests": {"cpu": "2000m", "memory": "4096Mi"},
+                    "requests": {"cpu": "1000m", "memory": "2048Mi"},
                     "limits": {"cpu": "2000m", "memory": "4096Mi"},
                 }
             }

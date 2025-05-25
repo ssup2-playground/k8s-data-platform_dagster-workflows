@@ -1,6 +1,6 @@
 from dagster import asset
 
-@asset(key_prefix=["examples"], 
+@asset(key_prefix=["words"], 
     group_name="words",
     description="Generate apple, banana, cherry words", 
     kinds=["python"],
@@ -16,7 +16,7 @@ from dagster import asset
 def generated_fruits_words():
     return ["apple", "banana", "cherry"]
 
-@asset(key_prefix=["examples"], 
+@asset(key_prefix=["words"], 
     group_name="words",
     description="Generate dog, cat, bird words", 
     kinds=["python"],
@@ -32,7 +32,7 @@ def generated_fruits_words():
 def generated_animals_words():
     return ["dog", "cat", "bird"]
 
-@asset(key_prefix=["examples"], 
+@asset(key_prefix=["words"], 
     group_name="words",
     description="Sum the two lists of words", 
     kinds=["python"],
