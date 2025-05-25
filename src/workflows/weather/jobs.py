@@ -15,4 +15,7 @@ process_weather_southkorea = define_asset_job(
                 }
             }
         }
-    })
+    },
+    run_tags={
+        "no-concurrency": "weather-southkorea",
+    }

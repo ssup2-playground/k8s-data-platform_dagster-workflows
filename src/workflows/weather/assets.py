@@ -5,7 +5,7 @@ import pandas as pd
 import pyarrow as pa
 import pyarrow.parquet as pq
 
-from dagster import asset, AssetExecutionContext, Nothing
+from dagster import asset, AssetExecutionContext
 
 from workflows.configs import get_southkorea_weather_api_key, init_minio_client, get_iceberg_catalog
 from workflows.weather.partitions import hourly_southkorea_weather_partitions
@@ -45,7 +45,7 @@ def get_hourly_parquet_object_name(date: str, hour: str) -> str:
 ## Assets
 @asset(
     key_prefix=["weather"],
-    group_name="southkorea",
+    group_name="weather",
     description="Fetched South Korea weather data in CSV format",
     partitions_def=hourly_southkorea_weather_partitions,
     kinds=["python"],
@@ -91,7 +91,7 @@ def fetched_southkorea_weather_csv_data(context: AssetExecutionContext):
 
 @asset(
     key_prefix=["weather"],
-    group_name="southkorea",
+    group_name="weather",
     description="Fetched South Korea weather data in Parquet format",
     deps=[fetched_southkorea_weather_csv_data],
     partitions_def=hourly_southkorea_weather_partitions,
@@ -138,7 +138,7 @@ def transformed_southkorea_weather_parquet_data(context: AssetExecutionContext):
 
 @asset(
     key_prefix=["weather"],
-    group_name="southkorea",
+    group_name="weather",
     description="Transform Parquet data to Iceberg table",
     deps=[transformed_southkorea_weather_parquet_data],
     partitions_def=hourly_southkorea_weather_partitions,
