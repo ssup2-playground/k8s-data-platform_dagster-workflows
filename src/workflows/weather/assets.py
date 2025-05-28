@@ -72,6 +72,7 @@ def get_daily_parquet_object_name(date: str) -> str:
     description="Fetched South Korea weather data in CSV format",
     partitions_def=hourly_southkorea_weather_partitions,
     kinds=["python"],
+    tags={"schedule": "hourly"}
 )
 def fetched_southkorea_weather_hourly_csv(context: AssetExecutionContext):
     # Init MinIO client
@@ -120,6 +121,7 @@ def fetched_southkorea_weather_hourly_csv(context: AssetExecutionContext):
     partitions_def=hourly_southkorea_weather_partitions,
     automation_condition=AutomationCondition.eager(),
     kinds=["python"],
+    tags={"schedule": "hourly"}
 )
 def transformed_southkorea_weather_hourly_parquet(context: AssetExecutionContext):
     # Init MinIO client
@@ -168,6 +170,7 @@ def transformed_southkorea_weather_hourly_parquet(context: AssetExecutionContext
     partitions_def=hourly_southkorea_weather_partitions,
     automation_condition=AutomationCondition.eager(),
     kinds=["python"],
+    tags={"schedule": "hourly"}
 )
 def transformed_southkorea_weather_hourly_iceberg_parquet(context: AssetExecutionContext):
     # Init MinIO client
@@ -227,6 +230,7 @@ def transformed_southkorea_weather_hourly_iceberg_parquet(context: AssetExecutio
     partitions_def=daily_southkorea_weather_partitions,
     automation_condition=AutomationCondition.eager(),
     kinds=["python"],
+    tags={"schedule": "daily"}
 )
 def transformed_southkorea_weather_daily_csv(context: AssetExecutionContext):
     # Init MinIO client
