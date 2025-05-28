@@ -6,7 +6,7 @@ import pyarrow as pa
 import pyarrow.parquet as pq
 import pyarrow.compute as pc
 
-from dagster import asset, AssetExecutionContext, AutomationCondition
+from dagster import asset, AssetExecutionContext, AssetIn, TimeWindowPartitionMapping
 
 from workflows.configs import get_southkorea_weather_api_key, init_minio_client, get_iceberg_catalog
 from workflows.weather.partitions import hourly_southkorea_weather_partitions, daily_southkorea_weather_partitions
@@ -223,7 +223,6 @@ def transformed_southkorea_weather_hourly_iceberg_parquet(context: AssetExecutio
     description="Aggregate hourly weather data to daily data in CSV format",
     deps=[fetched_southkorea_weather_hourly_csv],
     partitions_def=daily_southkorea_weather_partitions,
-    automation_condition=AutomationCondition.eager(),
     kinds=["python"],
 )
 def transformed_southkorea_weather_daily_csv(context: AssetExecutionContext):
@@ -231,8 +230,8 @@ def transformed_southkorea_weather_daily_csv(context: AssetExecutionContext):
     minio_client = init_minio_client()
     
     # Get date from partition key
-    partition_date_hour = context.partition_key
-    dt = datetime.strptime(partition_date_hour, "%Y-%m-%d-%H:%M")
+    partition_date = context.partition_key
+    dt = datetime.strptime(partition_date, "%Y-%m-%d")
     request_date = dt.strftime("%Y%m%d")
     
     # Check if daily data already exists
