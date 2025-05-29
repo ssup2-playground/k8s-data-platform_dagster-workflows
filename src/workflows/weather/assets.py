@@ -69,7 +69,7 @@ def get_daily_parquet_object_name(date: str) -> str:
 @asset(
     key_prefix=["weather"],
     group_name="weather",
-    description="Fetched South Korea weather data in CSV format",
+    description="Fetched hourly south korea weather data in CSV format",
     partitions_def=hourly_southkorea_weather_partitions,
     kinds=["python"],
     tags={"schedule": "hourly"}
@@ -116,10 +116,9 @@ def fetched_southkorea_weather_hourly_csv(context: AssetExecutionContext):
 @asset(
     key_prefix=["weather"],
     group_name="weather",
-    description="Fetched South Korea weather data in Parquet format",
+    description="Transformed hourly south korea weather data in Parquet format",
     deps=[fetched_southkorea_weather_hourly_csv],
     partitions_def=hourly_southkorea_weather_partitions,
-    automation_condition=AutomationCondition.eager(),
     kinds=["python"],
     tags={"schedule": "hourly"}
 )
@@ -165,10 +164,9 @@ def transformed_southkorea_weather_hourly_parquet(context: AssetExecutionContext
 @asset(
     key_prefix=["weather"],
     group_name="weather",
-    description="Transform Parquet data to Iceberg table",
+    description="Transform hourly parquet data to Iceberg table",
     deps=[transformed_southkorea_weather_hourly_parquet],
     partitions_def=hourly_southkorea_weather_partitions,
-    automation_condition=AutomationCondition.eager(),
     kinds=["python"],
     tags={"schedule": "hourly"}
 )
@@ -225,10 +223,9 @@ def transformed_southkorea_weather_hourly_iceberg_parquet(context: AssetExecutio
 @asset(
     key_prefix=["weather"],
     group_name="weather",
-    description="Aggregate hourly weather data to daily data in CSV format",
+    description="Transformed daily south korea weather data in CSV format",
     deps=[fetched_southkorea_weather_hourly_csv],
     partitions_def=daily_southkorea_weather_partitions,
-    automation_condition=AutomationCondition.eager(),
     kinds=["python"],
     tags={"schedule": "daily"}
 )
@@ -290,3 +287,50 @@ def transformed_southkorea_weather_daily_csv(context: AssetExecutionContext):
         data=buffer,
         length=buffer.getbuffer().nbytes
     )
+
+@asset(
+    key_prefix=["weather"],
+    group_name="weather",
+    description="Transformed daily south korea weather data in Parquet format",
+    deps=[transformed_southkorea_weather_daily_csv],
+    partitions_def=daily_southkorea_weather_partitions,
+    kinds=["python"],
+    tags={"schedule": "daily"}
+)
+def transformed_southkorea_weather_daily_parquet(context: AssetExecutionContext):
+    # Init MinIO client
+    minio_client = init_minio_client()
+    
+    # Get date from partition key
+    partition_date = context.partition_key
+    dt = datetime.strptime(partition_date, "%Y-%m-%d")
+    request_date = dt.strftime("%Y%m%d")
+    
+    # Check if daily data already exists
+    daily_parquet_name = get_daily_parquet_object_name(request_date)
+    try:
+        minio_client.stat_object(MINIO_BUCKET, daily_parquet_name)
+        context.log.info(f"Daily data already exists for date {request_date}")
+        return 0
+    except Exception as e:
+        if "NoSuchKey" not in str(e):
+            context.log.error(f"Unexpected error: {e}")
+            return 1
+    
+    # Get data
+    object_csv_name = get_daily_csv_object_name(request_date)
+    csv_data = minio_client.get_object(bucket_name=MINIO_BUCKET,
+                                      object_name=object_csv_name)
+    dataframe = pd.read_csv(csv_data)
+    
+    # Convert to Parquet
+    table = pa.Table.from_pandas(dataframe)
+    buffer = io.BytesIO()
+    pq.write_table(table, buffer)
+    buffer.seek(0)
+    
+    # Write to MinIO
+    minio_client.put_object(bucket_name=MINIO_BUCKET,
+                            object_name=daily_parquet_name,
+                            data=buffer,
+                            length=buffer.getbuffer().nbytes)
