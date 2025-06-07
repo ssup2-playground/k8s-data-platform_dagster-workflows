@@ -101,10 +101,10 @@ def fetched_southkorea_weather_hourly_csv(context: AssetExecutionContext):
     api_key = get_southkorea_weather_api_key()
     data = get_southkorea_weather_data(api_key, request_date, request_hour)
 
-    # Convert to Parquet
+    # Convert to CSV
     dataframe = pd.DataFrame(data)
     buffer = io.BytesIO()
-    dataframe.to_csv(buffer, index=False)
+    dataframe.to_csv(buffer, index=False, header=False)
     buffer.seek(0)
 
     # Write to MinIO
