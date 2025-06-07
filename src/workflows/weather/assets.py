@@ -27,10 +27,10 @@ def get_hourly_csv_object_name(date: str, hour: str) -> str:
     '''Get hourly csv object name'''
     return (
         f"{MINIO_DIRECTORY_SOUTHKOREA_HOURLY_CSV}/"
-        f"year={date[0:4]}/"
-        f"month={date[4:6]}/"
-        f"day={date[6:8]}/"
-        f"hour={hour.zfill(2)}/"
+        f"year={int(date[0:4])}/"
+        f"month={int(date[4:6])}/"
+        f"day={int(date[6:8])}/"
+        f"hour={int(hour)}/"
         f"data.csv"
     )
 
@@ -38,10 +38,10 @@ def get_hourly_parquet_object_name(date: str, hour: str) -> str:
     '''Get hourly parquet object name'''
     return (
         f"{MINIO_DIRECTORY_SOUTHKOREA_HOURLY_PARQUET}/"
-        f"year={date[0:4]}/"
-        f"month={date[4:6]}/"
-        f"day={date[6:8]}/"
-        f"hour={hour.zfill(2)}/"
+        f"year={int(date[0:4])}/"
+        f"month={int(date[4:6])}/"
+        f"day={int(date[6:8])}/"
+        f"hour={int(hour)}/"
         f"data.parquet"
     )
 
@@ -49,9 +49,9 @@ def get_daily_csv_object_name(date: str) -> str:
     '''Get daily csv object name'''
     return (
         f"{MINIO_DIRECTORY_SOUTHKOREA_DAILY_CSV}/"
-        f"year={date[0:4]}/"
-        f"month={date[4:6]}/"
-        f"day={date[6:8]}/"
+        f"year={int(date[0:4])}/"
+        f"month={int(date[4:6])}/"
+        f"day={int(date[6:8])}/"
         f"data.csv"
     )
 
@@ -59,9 +59,9 @@ def get_daily_parquet_object_name(date: str) -> str:
     '''Get daily parquet object name'''
     return (
         f"{MINIO_DIRECTORY_SOUTHKOREA_DAILY_PARQUET}/"
-        f"year={date[0:4]}/"
-        f"month={date[4:6]}/"
-        f"day={date[6:8]}/"
+        f"year={int(date[0:4])}/"
+        f"month={int(date[4:6])}/"
+        f"day={int(date[6:8])}/"
         f"data.parquet"
     )
 
