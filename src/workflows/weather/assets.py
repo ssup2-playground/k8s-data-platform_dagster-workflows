@@ -104,7 +104,7 @@ def fetched_southkorea_weather_hourly_csv(context: AssetExecutionContext):
     # Convert to CSV
     dataframe = pd.DataFrame(data)
     buffer = io.BytesIO()
-    dataframe.to_csv(buffer, index=False, header=False)
+    dataframe.to_csv(buffer, index=False)
     buffer.seek(0)
 
     # Write to MinIO
