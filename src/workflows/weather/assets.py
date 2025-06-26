@@ -5,6 +5,7 @@ import pandas as pd
 import pyarrow as pa
 import pyarrow.parquet as pq
 import pyarrow.compute as pc
+from pyiceberg.table import Table
 
 from dagster import asset, AssetExecutionContext, AssetIn, TimeWindowPartitionMapping, AutomationCondition
 
@@ -64,6 +65,36 @@ def get_daily_parquet_object_name(date: str) -> str:
         f"day={int(date[6:8])}/"
         f"data.parquet"
     )
+
+def check_partition_exists(iceberg_table, date: str, hour: str = None) -> bool:
+    '''Check if a specific partition exists using inspect.partitions()'''
+    try:
+        partitions_info = iceberg_table.inspect.partitions()
+        
+        # Extract partition data as PyArrow arrays
+        years_array = partitions_info['partition']['year']
+        months_array = partitions_info['partition']['month']
+        days_array = partitions_info['partition']['day']
+        hours_array = partitions_info['partition']['hour']
+        
+        # Use PyArrow's vectorized operations
+        year_mask = pc.equal(years_array, int(date[0:4]))
+        month_mask = pc.equal(months_array, int(date[4:6]))
+        day_mask = pc.equal(days_array, int(date[6:8]))
+        
+        # Combine masks
+        combined_mask = pc.and_(pc.and_(year_mask, month_mask), day_mask)
+        
+        if hour is not None:
+            hour_mask = pc.equal(hours_array, int(hour))
+            combined_mask = pc.and_(combined_mask, hour_mask)
+        
+        # Check if any element is True
+        return pc.any(combined_mask).as_py()
+        
+    except Exception as e:
+        print(f"Error checking partition from inspect: {e}")
+        return False
 
 ## Assets
 @asset(
@@ -179,6 +210,15 @@ def transformed_southkorea_weather_hourly_iceberg_parquet(context: AssetExecutio
     dt = datetime.strptime(partition_date_hour, "%Y-%m-%d-%H:%M")
     request_date = dt.strftime("%Y%m%d")
     request_hour = dt.strftime("%H")
+
+    # Get Iceberg table
+    catalog = get_iceberg_catalog()
+    iceberg_table = catalog.load_table(ICEBERG_TABLE)
+
+    # Check if partition exists
+    if check_partition_exists(iceberg_table, request_date, request_hour):
+        context.log.info(f"Data already exists in Iceberg table for {partition_date_hour}")
+        return 0
 
     # Get data and convert directly to PyArrow Table
     object_parquet_name = get_hourly_parquet_object_name(request_date, request_hour)
@@ -334,3 +374,61 @@ def transformed_southkorea_weather_daily_parquet(context: AssetExecutionContext)
                             object_name=daily_parquet_name,
                             data=buffer,
                             length=buffer.getbuffer().nbytes)
+
+@asset(
+    key_prefix=["weather"],
+    group_name="weather",
+    description="Transformed daily south korea weather data in Iceberg Parquet format",
+    deps=[transformed_southkorea_weather_daily_parquet],
+    partitions_def=daily_southkorea_weather_partitions,
+    kinds=["python"],
+    tags={"schedule": "daily"}
+)
+def transformed_southkorea_weather_daily_iceberg_parquet(context: AssetExecutionContext):
+    # Init MinIO client
+    minio_client = init_minio_client()
+    
+    # Get date from partition key
+    partition_date = context.partition_key
+    dt = datetime.strptime(partition_date, "%Y-%m-%d")
+    request_date = dt.strftime("%Y%m%d")
+    
+    # Get data
+    object_parquet_name = get_daily_parquet_object_name(request_date)
+    parquet_data = minio_client.get_object(bucket_name=MINIO_BUCKET,
+                                         object_name=object_parquet_name)
+    
+    # Read directly as PyArrow Table
+    buffer = io.BytesIO(parquet_data.read())
+    buffer.seek(0)
+    table = pq.read_table(buffer)
+    
+    # Convert types to match Iceberg schema
+    table = table.cast(pa.schema([
+        ('branch_name', pa.string()),
+        ('temp', pa.float64()),
+        ('rain', pa.float64()),
+        ('snow', pa.float64()),
+        ('cloud_cover_total', pa.int32()),
+        ('cloud_cover_lowmiddle', pa.int32()),
+        ('cloud_lowest', pa.int32()),
+        ('cloud_shape', pa.string()),
+        ('humidity', pa.int32()),
+        ('wind_speed', pa.float64()),
+        ('wind_direction', pa.string()),
+        ('pressure_local', pa.float64()),
+        ('pressure_sea', pa.float64()),
+        ('pressure_vaper', pa.float64()),
+        ('dew_point', pa.float64()),
+        ('hour', pa.int32()),
+    ]))
+    
+    # Add partition columns with correct types
+    table = table.append_column('year', pa.array([int(request_date[0:4])] * len(table), type=pa.int32()))
+    table = table.append_column('month', pa.array([int(request_date[4:6])] * len(table), type=pa.int32()))
+    table = table.append_column('day', pa.array([int(request_date[6:8])] * len(table), type=pa.int32()))
+    
+    # Load Iceberg table and append data
+    catalog = get_iceberg_catalog()
+    iceberg_table = catalog.load_table(ICEBERG_TABLE)
+    iceberg_table.append(table)

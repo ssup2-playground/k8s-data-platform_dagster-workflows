@@ -35,7 +35,7 @@ def get_iceberg_catalog() -> HiveCatalog:
             "s3.secret-access-key": MINIO_SECRET_KEY,
             "hive.hive2-compatible": True
         }
-    ) 
+    )
 
 # Dagster 
 def init_io_manager() -> dict:
