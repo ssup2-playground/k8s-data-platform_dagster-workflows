@@ -66,35 +66,25 @@ def get_daily_parquet_object_name(date: str) -> str:
         f"data.parquet"
     )
 
-def check_partition_exists(iceberg_table, date: str, hour: str = None) -> bool:
+def check_partition_exists_by_date_and_hour(iceberg_table: Table, date: str, hour: str) -> bool:
     '''Check if a specific partition exists using inspect.partitions()'''
-    try:
-        partitions_info = iceberg_table.inspect.partitions()
-        
-        # Extract partition data as PyArrow arrays
-        years_array = partitions_info['partition']['year']
-        months_array = partitions_info['partition']['month']
-        days_array = partitions_info['partition']['day']
-        hours_array = partitions_info['partition']['hour']
-        
-        # Use PyArrow's vectorized operations
-        year_mask = pc.equal(years_array, int(date[0:4]))
-        month_mask = pc.equal(months_array, int(date[4:6]))
-        day_mask = pc.equal(days_array, int(date[6:8]))
-        
-        # Combine masks
-        combined_mask = pc.and_(pc.and_(year_mask, month_mask), day_mask)
-        
-        if hour is not None:
-            hour_mask = pc.equal(hours_array, int(hour))
-            combined_mask = pc.and_(combined_mask, hour_mask)
-        
-        # Check if any element is True
-        return pc.any(combined_mask).as_py()
-        
-    except Exception as e:
-        print(f"Error checking partition from inspect: {e}")
-        return False
+    year = int(date[0:4])
+    month = int(date[4:6])
+    day = int(date[6:8])
+
+    date_list = iceberg_table.inspect.partitions()["partition"].to_pylist()
+    date_set = set(tuple(date.values()) for date in date_list)
+    return (year, month, day, int(hour)) in date_set
+
+def check_partition_exists_by_date(iceberg_table: Table, date: str) -> bool:
+    '''Check if a specific partition exists using inspect.partitions()'''
+    year = int(date[0:4])
+    month = int(date[4:6])
+    day = int(date[6:8])
+
+    date_list = iceberg_table.inspect.partitions()["partition"].to_pylist()
+    date_set = set(tuple(date.values()) for date in date_list)
+    return (year, month, day) in date_set
 
 ## Assets
 @asset(
@@ -205,7 +195,7 @@ def transformed_southkorea_weather_hourly_iceberg_parquet(context: AssetExecutio
     # Init MinIO client
     minio_client = init_minio_client()
     
-    # Get date and hour
+    # Get date and hour from partition key
     partition_date_hour = context.partition_key
     dt = datetime.strptime(partition_date_hour, "%Y-%m-%d-%H:%M")
     request_date = dt.strftime("%Y%m%d")
@@ -216,7 +206,7 @@ def transformed_southkorea_weather_hourly_iceberg_parquet(context: AssetExecutio
     iceberg_table = catalog.load_table(ICEBERG_TABLE)
 
     # Check if partition exists
-    if check_partition_exists(iceberg_table, request_date, request_hour):
+    if check_partition_exists_by_date_and_hour(iceberg_table, request_date, request_hour):
         context.log.info(f"Data already exists in Iceberg table for {partition_date_hour}")
         return 0
 
@@ -392,6 +382,15 @@ def transformed_southkorea_weather_daily_iceberg_parquet(context: AssetExecution
     partition_date = context.partition_key
     dt = datetime.strptime(partition_date, "%Y-%m-%d")
     request_date = dt.strftime("%Y%m%d")
+
+    # Get Iceberg table
+    catalog = get_iceberg_catalog()
+    iceberg_table = catalog.load_table(ICEBERG_TABLE)
+
+    # Check if partition exists
+    if check_partition_exists_by_date(iceberg_table, request_date):
+        context.log.info(f"Data already exists in Iceberg table for {partition_date}")
+        return 0
     
     # Get data
     object_parquet_name = get_daily_parquet_object_name(request_date)

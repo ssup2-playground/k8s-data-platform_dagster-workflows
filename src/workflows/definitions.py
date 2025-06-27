@@ -10,7 +10,7 @@ from workflows.words.jobs import process_words_asset, process_words_asset_k8s, p
 from workflows.words.assets import generated_fruits_words, generated_animals_words, summed_words
 from workflows.words.schedules import schedule_words_asset_every_minute, schedule_words_asset_k8s_every_minute
 
-from workflows.weather.assets import fetched_southkorea_weather_hourly_csv, transformed_southkorea_weather_hourly_parquet, transformed_southkorea_weather_hourly_iceberg_parquet, transformed_southkorea_weather_daily_csv, transformed_southkorea_weather_daily_parquet
+from workflows.weather.assets import fetched_southkorea_weather_hourly_csv, transformed_southkorea_weather_hourly_parquet, transformed_southkorea_weather_hourly_iceberg_parquet, transformed_southkorea_weather_daily_csv, transformed_southkorea_weather_daily_parquet, transformed_southkorea_weather_daily_iceberg_parquet
 from workflows.weather.jobs import process_weather_southkorea_hourly, process_weather_southkorea_daily
 from workflows.weather.schedules import schedule_weather_southkorea_hourly, schedule_weather_southkorea_daily
 
@@ -35,6 +35,7 @@ defs = Definitions(
         transformed_southkorea_weather_hourly_iceberg_parquet,
         transformed_southkorea_weather_daily_csv,
         transformed_southkorea_weather_daily_parquet,
+        transformed_southkorea_weather_daily_iceberg_parquet,
     ],
     jobs=[
         # Numbers
