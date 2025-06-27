@@ -21,7 +21,8 @@ MINIO_DIRECTORY_SOUTHKOREA_HOURLY_ICEBERG_PARQUET = "southkorea/hourly-iceberg-p
 MINIO_DIRECTORY_SOUTHKOREA_DAILY_CSV = "southkorea/daily-csv"
 MINIO_DIRECTORY_SOUTHKOREA_DAILY_PARQUET = "southkorea/daily-parquet"
 
-ICEBERG_TABLE = "weather.southkorea_hourly_iceberg_parquet"
+ICEBERG_TABLE_HOURLY = "weather.southkorea_hourly_iceberg_parquet"
+ICEBERG_TABLE_DAILY = "weather.southkorea_daily_iceberg_parquet"
 
 ## Functions
 def get_hourly_csv_object_name(date: str, hour: str) -> str:
@@ -203,7 +204,7 @@ def transformed_southkorea_weather_hourly_iceberg_parquet(context: AssetExecutio
 
     # Get Iceberg table
     catalog = get_iceberg_catalog()
-    iceberg_table = catalog.load_table(ICEBERG_TABLE)
+    iceberg_table = catalog.load_table(ICEBERG_TABLE_HOURLY)
 
     # Check if partition exists
     if check_partition_exists_by_date_and_hour(iceberg_table, request_date, request_hour):
@@ -247,7 +248,7 @@ def transformed_southkorea_weather_hourly_iceberg_parquet(context: AssetExecutio
 
     # Load Iceberg table and append data
     catalog = get_iceberg_catalog()
-    iceberg_table = catalog.load_table(ICEBERG_TABLE)
+    iceberg_table = catalog.load_table(ICEBERG_TABLE_HOURLY)
     iceberg_table.append(table)
 
 @asset(
@@ -385,7 +386,7 @@ def transformed_southkorea_weather_daily_iceberg_parquet(context: AssetExecution
 
     # Get Iceberg table
     catalog = get_iceberg_catalog()
-    iceberg_table = catalog.load_table(ICEBERG_TABLE)
+    iceberg_table = catalog.load_table(ICEBERG_TABLE_DAILY)
 
     # Check if partition exists
     if check_partition_exists_by_date(iceberg_table, request_date):
@@ -429,5 +430,5 @@ def transformed_southkorea_weather_daily_iceberg_parquet(context: AssetExecution
     
     # Load Iceberg table and append data
     catalog = get_iceberg_catalog()
-    iceberg_table = catalog.load_table(ICEBERG_TABLE)
+    iceberg_table = catalog.load_table(ICEBERG_TABLE_DAILY)
     iceberg_table.append(table)
