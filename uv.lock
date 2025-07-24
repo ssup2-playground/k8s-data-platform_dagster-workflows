@@ -547,6 +547,20 @@ wheels = [
 ]
 
 [[package]]
+name = "dagster-pyspark"
+version = "0.26.15"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "dagster" },
+    { name = "dagster-spark" },
+    { name = "pyspark" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/65/de/a857788b8205236b3e1b7991dd01e6a773ab819d9ff9a2f4c01e91d5294d/dagster_pyspark-0.26.15.tar.gz", hash = "sha256:31ec6b76d2088c01358d45427e796cfe7183b1069a693aad139ac8016d092894", size = 12135, upload-time = "2025-05-15T18:44:18.857Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/6d/ed/8c7a60e378563805b47e3ad4c53c898909771dd837b1c40c91c4632fd099/dagster_pyspark-0.26.15-py3-none-any.whl", hash = "sha256:b294c71e2bcc802e4db55da39b2866c5dfbe65b8c5c34b1be76976709cf1c923", size = 12566, upload-time = "2025-05-15T18:44:17.776Z" },
+]
+
+[[package]]
 name = "dagster-shared"
 version = "0.26.15"
 source = { registry = "https://pypi.org/simple" }
@@ -560,6 +574,18 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/a8/c5/784c86156a0551b5d40b58a0ecc1129616e2089de7c73d0c038a3a8a6ee0/dagster_shared-0.26.15.tar.gz", hash = "sha256:0472587bd7a582bbe4252d3d57deaa6483afb97bf3394de094a3b80dcefcbc42", size = 67885, upload-time = "2025-05-15T18:44:39.901Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/6e/8b/829f8e6f80da6b1a60dbeab16332ded04c7029eea794a2c18dd869631a0e/dagster_shared-0.26.15-py3-none-any.whl", hash = "sha256:6798be17244d5be686d170fee87711e59b57555afbcf36373c71aa933844a83e", size = 79158, upload-time = "2025-05-15T18:44:38.913Z" },
+]
+
+[[package]]
+name = "dagster-spark"
+version = "0.26.15"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "dagster" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/f4/46/2d32c5faf335fb4af207dd86433e63307c5a49e4ed51e305501cdb458ff0/dagster_spark-0.26.15.tar.gz", hash = "sha256:33ac197cb15045bb477c42fc0086de0fbe1e0ce53196fcfb4810f516326d608e", size = 38289, upload-time = "2025-05-15T18:42:41.202Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/4b/a1/3895a0122cd8898fab7cbcca21de6876df369295224410ba1f4cd4686789/dagster_spark-0.26.15-py3-none-any.whl", hash = "sha256:92cef46dbb654c2a3db3eab740801be3d7fae1484de03065852edadb6a24fe87", size = 40056, upload-time = "2025-05-15T18:42:39.695Z" },
 ]
 
 [[package]]
@@ -938,6 +964,7 @@ dependencies = [
     { name = "dagster-k8s" },
     { name = "dagster-obstore" },
     { name = "dagster-postgres" },
+    { name = "dagster-pyspark" },
     { name = "dagster-webserver" },
     { name = "minio" },
     { name = "pandas" },
@@ -954,6 +981,7 @@ requires-dist = [
     { name = "dagster-k8s", specifier = ">=0.26.15" },
     { name = "dagster-obstore", specifier = ">=0.2.3" },
     { name = "dagster-postgres", specifier = ">=0.26.15" },
+    { name = "dagster-pyspark", specifier = ">=0.26.15" },
     { name = "dagster-webserver", specifier = ">=1.10.15" },
     { name = "minio", specifier = ">=7.2.15" },
     { name = "pandas", specifier = ">=2.2.3" },
@@ -1812,6 +1840,15 @@ wheels = [
 ]
 
 [[package]]
+name = "py4j"
+version = "0.10.9.9"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/38/31/0b210511177070c8d5d3059556194352e5753602fa64b85b7ab81ec1a009/py4j-0.10.9.9.tar.gz", hash = "sha256:f694cad19efa5bd1dee4f3e5270eb406613c974394035e5bfc4ec1aba870b879", size = 761089, upload-time = "2025-01-15T03:53:18.624Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/bd/db/ea0203e495be491c85af87b66e37acfd3bf756fd985f87e46fc5e3bf022c/py4j-0.10.9.9-py2.py3-none-any.whl", hash = "sha256:c7c26e4158defb37b0bb124933163641a2ff6e3a3913f7811b0ddbe07ed61533", size = 203008, upload-time = "2025-01-15T03:53:15.648Z" },
+]
+
+[[package]]
 name = "pyarrow"
 version = "20.0.0"
 source = { registry = "https://pypi.org/simple" }
@@ -2142,6 +2179,15 @@ sdist = { url = "https://files.pythonhosted.org/packages/0f/49/4cea918a08f02817a
 wheels = [
     { url = "https://files.pythonhosted.org/packages/5a/dc/491b7661614ab97483abf2056be1deee4dc2490ecbf7bff9ab5cdbac86e1/pyreadline3-3.5.4-py3-none-any.whl", hash = "sha256:eaf8e6cc3c49bcccf145fc6067ba8643d1df34d604a1ec0eccbf7a18e6d3fae6", size = 83178, upload-time = "2024-09-19T02:40:08.598Z" },
 ]
+
+[[package]]
+name = "pyspark"
+version = "4.0.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "py4j" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/9d/0e/5b38d51f1b1c2618cccfbf35093268665af9a3bdb493e5a3ecd991def633/pyspark-4.0.0.tar.gz", hash = "sha256:38db1b4f6095a080d7605e578d775528990e66dc326311d93e94a71cfc24e5a5", size = 434132212, upload-time = "2025-05-23T03:29:33.916Z" }
 
 [[package]]
 name = "python-dateutil"
