@@ -9,7 +9,7 @@ from pyiceberg.table import Table
 from dagster import asset, AssetExecutionContext
 from kubernetes import client, config, watch
 
-from workflows.configs import get_southkorea_weather_api_key, init_minio_client, get_iceberg_catalog, get_k8s_pod_namespace, get_k8s_pod_name, get_k8s_pod_uid
+from workflows.configs import get_southkorea_weather_api_key, init_minio_client, get_iceberg_catalog, get_k8s_service_account_name, get_k8s_pod_namespace, get_k8s_pod_name, get_k8s_pod_uid
 from workflows.weather.partitions import hourly_southkorea_weather_partitions, daily_southkorea_weather_partitions
 from weather.southkorea import get_southkorea_weather_data
 
@@ -450,6 +450,7 @@ def calculated_southkorea_weather_daily_average_parquet(context: AssetExecutionC
 
     # Get spark driver pod name
     driver_pod_service_name = f"southkorea-weather-daily-average-parquet-spark-driver-{request_date}"
+    dagster_pod_service_account_name = get_k8s_service_account_name()
     dagster_pod_namespace = get_k8s_pod_namespace()
     dagster_pod_name = get_k8s_pod_name()
     dagster_pod_uid = get_k8s_pod_uid()
@@ -523,6 +524,7 @@ def calculated_southkorea_weather_daily_average_parquet(context: AssetExecutionC
                         "--name", driver_pod_service_name,
                         "--executor-cores", "1",
                         "--executor-memory", "1g",
+                        "--conf", "spark.kubernetes.authenticate.driver.serviceAccountName", dagster_pod_service_account_name,
                         "--conf", "spark.executor.instances=2",
                         "--conf", "spark.kubernetes.namespace=spark",
                         "--conf", "spark.kubernetes.container.image=ghcr.io/ssup2-playground/k8s-data-platform_spark-jobs:0.1.8",

@@ -8,6 +8,7 @@ from dagster import fs_io_manager
 from dagster_aws.s3 import s3_pickle_io_manager, s3_resource
 
 # Set configs from envs
+K8S_SERVICE_ACCOUNT_NAME = os.getenv("K8S_SERVICE_ACCOUNT_NAME", "default")
 K8S_POD_NAMESPACE = os.getenv("K8S_POD_NAMESPACE", "default")
 K8S_POD_NAME = os.getenv("K8S_POD_NAME", "dagster-pod")
 K8S_POD_UID = os.getenv("K8S_POD_UID", "uid")
@@ -25,6 +26,9 @@ IO_MANAGER_S3_PREFIX = os.getenv("IO_MANAGER_S3_PREFIX", "io-manager")
 WEATHER_SOUTHKOREA_API_KEY = os.getenv("WEATHER_SOUTHKOREA_API_KEY", "")
 
 # Kubernetes
+def get_k8s_service_account_name() -> str:
+    return K8S_SERVICE_ACCOUNT_NAME
+
 def get_k8s_pod_namespace() -> str:
     return K8S_POD_NAMESPACE
 
