@@ -513,6 +513,7 @@ def calculated_southkorea_weather_daily_average_parquet(context: AssetExecutionC
         spec=client.V1PodSpec(
             service_account_name=dagster_pod_service_account_name,
             restart_policy="Never",
+            automount_service_account_token=True,
             containers=[
                 client.V1Container(
                     name="spark-driver",
