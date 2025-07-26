@@ -528,6 +528,8 @@ def calculated_southkorea_weather_daily_average_parquet(context: AssetExecutionC
                         "--conf", "spark.driver.port=7077",
                         "--conf", "spark.executor.instances=2",
                         "--conf", "spark.kubernetes.authenticate.serviceAccountName=" + f"{dagster_pod_service_account_name}",
+                        "--conf", "spark.kubernetes.authenticate.caCertFile=/var/run/secrets/kubernetes.io/serviceaccount/ca.crt",
+                        "--conf", "spark.kubernetes.authenticate.oauthTokenFile=/var/run/secrets/kubernetes.io/serviceaccount/token",
                         "--conf", "spark.kubernetes.namespace=" + f"{dagster_pod_namespace}",
                         "--conf", "spark.kubernetes.driver.pod.name=" + f"{spark_job_name}",
                         "--conf", "spark.kubernetes.executor.podNamePrefix=" + f"{spark_job_name}-",
