@@ -528,13 +528,15 @@ def calculated_southkorea_weather_daily_average_parquet(context: AssetExecutionC
                         "--conf", "spark.kubernetes.namespace=spark",
                         "--conf", "spark.kubernetes.container.image=ghcr.io/ssup2-playground/k8s-data-platform_spark-jobs:0.1.8",
                         "--conf", "spark.pyspark.python=/app/.venv/bin/python3",
+                        "--conf", "spark.jars.ivy=/tmp/.ivy",
                         "--conf", "spark.jars.packages=org.apache.hadoop:hadoop-aws:3.3.4,com.amazonaws:aws-java-sdk-bundle:1.12.262",
                         "--conf", "spark.eventLog.enabled=true",
                         "--conf", "spark.eventLog.dir=s3a://spark/logs",
                         "--conf", "spark.ui.prometheus.enabled=true",
                         "local:///app/jobs/weather_southkorea_daily_average_parquet.py",
                         "--date", request_date
-                    ]
+                    ],
+                    restart_policy="Never"
                 )
             ]
         )
@@ -548,7 +550,7 @@ def calculated_southkorea_weather_daily_average_parquet(context: AssetExecutionC
     # Wait for pod to be deleted with watch 
     v1 = client.CoreV1Api()
     w = watch.Watch()
-    for event in w.stream(v1.read_namespaced_pod, name=spark_job_name, namespace=dagster_pod_namespace, timeout_seconds=300):
+    for event in w.stream(v1.read_namespaced_pod, name=spark_job_name, namespace=dagster_pod_namespace):
         pod = event["object"]
         phase = pod.status.phase
         print(f"Pod phase: {phase}")
