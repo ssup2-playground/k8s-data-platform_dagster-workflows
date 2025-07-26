@@ -11,7 +11,7 @@ from kubernetes import client, config, watch
 
 from workflows.configs import get_southkorea_weather_api_key, init_minio_client, get_iceberg_catalog, get_k8s_service_account_name, get_k8s_pod_namespace, get_k8s_pod_name, get_k8s_pod_uid
 from workflows.weather.partitions import hourly_southkorea_weather_partitions, daily_southkorea_weather_partitions
-from weather.southkorea import get_southkorea_weather_data
+from utils.southkorea import get_southkorea_weather_data
 
 ## Constants
 MINIO_BUCKET = "weather"
@@ -449,7 +449,7 @@ def calculated_southkorea_weather_daily_average_parquet(context: AssetExecutionC
     request_date = dt.strftime("%Y%m%d")
 
     # Get spark driver pod name
-    driver_pod_service_name = f"southkorea-weather-daily-average-parquet-spark-driver-{request_date}"
+    spark_job_name = f"southkorea-weather-daily-average-parquet-spark-driver-{request_date}"
     dagster_pod_service_account_name = get_k8s_service_account_name()
     dagster_pod_namespace = get_k8s_pod_namespace()
     dagster_pod_name = get_k8s_pod_name()
@@ -460,22 +460,22 @@ def calculated_southkorea_weather_daily_average_parquet(context: AssetExecutionC
     k8s_client = client.CoreV1Api()
 
     # Create spark driver service
-    driver_service = client.V1Service(
+    spark_driver_service = client.V1Service(
         api_version="v1",
         kind="Service",
         metadata=client.V1ObjectMeta(
-            name=driver_pod_service_name,
+            name=spark_job_name,
+            owner_references=[
+                client.V1OwnerReference(
+                    api_version="v1",
+                    kind="Pod",
+                    name=dagster_pod_name,
+                    uid=dagster_pod_uid
+                )
+            ],
         ),
-        owner_references=[
-            client.V1OwnerReference(
-                api_version="v1",
-                kind="Pod",
-                name=dagster_pod_name,
-                uid=dagster_pod_uid
-            )
-        ],
         spec=client.V1ServiceSpec(
-            selector={"spark": driver_pod_service_name},
+            selector={"spark": spark_job_name},
             ports=[
                 client.V1ServicePort(port=7077, target_port=7077)
             ]
@@ -484,17 +484,17 @@ def calculated_southkorea_weather_daily_average_parquet(context: AssetExecutionC
 
     k8s_client.create_namespaced_service(
         namespace=dagster_pod_namespace,
-        body=driver_service
+        body=spark_driver_service
     )
 
     # Create spark driver pod
-    driver_job = client.V1Pod(
+    spark_driver_job = client.V1Pod(
         api_version="v1",
         kind="Pod",
         metadata=client.V1ObjectMeta(
-            name=driver_pod_service_name,
+            name=spark_job_name,
             labels={
-                "spark": driver_pod_service_name
+                "spark": spark_job_name
             },
             annotations={
                 "prometheus.io/scrape": "true",
@@ -511,8 +511,7 @@ def calculated_southkorea_weather_daily_average_parquet(context: AssetExecutionC
             ]
         ),
         spec=client.V1PodSpec(
-            service_account_name="spark",
-            node_selector={"spark": driver_pod_service_name},
+            service_account_name=dagster_pod_service_account_name,
             containers=[
                 client.V1Container(
                     name="spark-driver",
@@ -521,14 +520,13 @@ def calculated_southkorea_weather_daily_average_parquet(context: AssetExecutionC
                     args=[
                         "--master", "k8s://kubernetes.default.svc.cluster.local:6443",
                         "--deploy-mode", "client",
-                        "--name", driver_pod_service_name,
+                        "--name", f"{spark_job_name}",
                         "--executor-cores", "1",
                         "--executor-memory", "1g",
-                        "--conf", "spark.kubernetes.authenticate.driver.serviceAccountName", dagster_pod_service_account_name,
+                        "--conf", "spark.driver.host=" + f"spark://{spark_job_name}:7077",
                         "--conf", "spark.executor.instances=2",
                         "--conf", "spark.kubernetes.namespace=spark",
                         "--conf", "spark.kubernetes.container.image=ghcr.io/ssup2-playground/k8s-data-platform_spark-jobs:0.1.8",
-                        "--conf", "spark.kubernetes.authenticate.driver.serviceAccountName=spark",
                         "--conf", "spark.pyspark.python=/app/.venv/bin/python3",
                         "--conf", "spark.jars.packages=org.apache.hadoop:hadoop-aws:3.3.4,com.amazonaws:aws-java-sdk-bundle:1.12.262",
                         "--conf", "spark.eventLog.enabled=true",
@@ -544,16 +542,16 @@ def calculated_southkorea_weather_daily_average_parquet(context: AssetExecutionC
 
     k8s_client.create_namespaced_pod(
         namespace=dagster_pod_namespace,
-        body=driver_job
+        body=spark_driver_job
     )
 
     # Wait for pod to be deleted with watch 
     v1 = client.CoreV1Api()
     w = watch.Watch()
-    for event in w.stream(v1.read_namespaced_pod, name=driver_pod_service_name, namespace=dagster_pod_namespace, timeout_seconds=300):
+    for event in w.stream(v1.read_namespaced_pod, name=spark_job_name, namespace=dagster_pod_namespace, timeout_seconds=300):
         pod = event["object"]
         phase = pod.status.phase
         print(f"Pod phase: {phase}")
         if phase in ["Succeeded", "Failed"]:
-            print(f"Pod '{driver_pod_service_name}' has terminated with status: {phase}")
+            print(f"Pod '{spark_job_name}' has terminated with status: {phase}")
             break
