@@ -519,7 +519,7 @@ def calculated_southkorea_weather_daily_average_parquet(context: AssetExecutionC
                     image="ghcr.io/ssup2-playground/k8s-data-platform_spark-jobs:0.1.8",
                     args=[
                         "spark-submit",
-                        "--master", "k8s://kubernetes.default.svc.cluster.local:6443",
+                        "--master", "k8s://kubernetes.default.svc.cluster.local.:443",
                         "--deploy-mode", "client",
                         "--name", f"{spark_job_name}",
                         "--executor-cores", "1",
