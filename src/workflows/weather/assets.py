@@ -527,7 +527,9 @@ def calculated_southkorea_weather_daily_average_parquet(context: AssetExecutionC
                         "--conf", "spark.driver.host=" + f"spark://{spark_job_name}:7077",
                         "--conf", "spark.executor.instances=2",
                         "--conf", "spark.kubernetes.namespace=" + f"{dagster_pod_namespace}",
-                        "--conf", "spark.kubernetes.container.image=" + f"ghcr.io/ssup2-playground/k8s-data-platform_spark-jobs:0.1.8",
+                        "--conf", "spark.kubernetes.driver.pod.name=" + f"{spark_job_name}",
+                        "--conf", "spark.kubernetes.executor.podNamePrefix=" + f"{spark_job_name}-",
+                        "--conf", "spark.kubernetes.container.image=" + f"ghcr.io/ssup2-playground/k8s-data-platform_spark-jobs:0.1.9",
                         "--conf", "spark.pyspark.python=" + f"/app/.venv/bin/python3",
                         "--conf", "spark.jars.ivy=/tmp/.ivy",
                         "--conf", "spark.jars.packages=org.apache.hadoop:hadoop-aws:3.3.4,com.amazonaws:aws-java-sdk-bundle:1.12.262",
@@ -536,6 +538,12 @@ def calculated_southkorea_weather_daily_average_parquet(context: AssetExecutionC
                         "--conf", "spark.ui.prometheus.enabled=true",
                         "local:///app/jobs/weather_southkorea_daily_average_parquet.py",
                         "--date", request_date
+                    ],
+                    env=[
+                        client.V1EnvVar(
+                            name="SPARK_USER",
+                            value="spark"
+                        )
                     ]
                 )
             ]
