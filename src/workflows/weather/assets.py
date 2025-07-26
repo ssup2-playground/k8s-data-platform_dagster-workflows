@@ -557,7 +557,7 @@ def calculated_southkorea_weather_daily_average_parquet(context: AssetExecutionC
     # Wait for pod to be deleted with watch
     v1 = client.CoreV1Api()
     w = watch.Watch()
-    for event in w.stream(v1.read_namespaced_pod, name=spark_job_name, namespace=dagster_pod_namespace):
+    for event in w.stream(v1.list_namespaced_pod, namespace=dagster_pod_namespace, field_selector=f"metadata.name={spark_job_name}", timeout_seconds=600):
         pod = event["object"]
         phase = pod.status.phase
         print(f"Pod phase: {phase}")
