@@ -449,7 +449,7 @@ def calculated_southkorea_weather_daily_average_parquet(context: AssetExecutionC
     request_date = dt.strftime("%Y%m%d")
 
     # Get spark driver pod name
-    spark_job_name = f"southkorea-weather-daily-average-parquet-spark-driver-{request_date}"
+    spark_job_name = f"southkorea-weather-daily-average-parquet-spark-{request_date}"
     dagster_pod_service_account_name = get_k8s_service_account_name()
     dagster_pod_namespace = get_k8s_pod_namespace()
     dagster_pod_name = get_k8s_pod_name()
@@ -533,7 +533,7 @@ def calculated_southkorea_weather_daily_average_parquet(context: AssetExecutionC
                         "--conf", "spark.kubernetes.authenticate.oauthTokenFile=/var/run/secrets/kubernetes.io/serviceaccount/token",
                         "--conf", "spark.kubernetes.namespace=" + f"{dagster_pod_namespace}",
                         "--conf", "spark.kubernetes.driver.pod.name=" + f"{spark_job_name}",
-                        "--conf", "spark.kubernetes.executor.podNamePrefix=" + f"{spark_job_name}-",
+                        "--conf", "spark.kubernetes.executor.podNamePrefix=" + f"{spark_job_name}",
                         "--conf", "spark.kubernetes.container.image=" + f"ghcr.io/ssup2-playground/k8s-data-platform_spark-jobs:0.1.9",
                         "--conf", "spark.pyspark.python=" + f"/app/.venv/bin/python3",
                         "--conf", "spark.jars.ivy=/tmp/.ivy",
