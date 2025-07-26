@@ -512,6 +512,7 @@ def calculated_southkorea_weather_daily_average_parquet(context: AssetExecutionC
         ),
         spec=client.V1PodSpec(
             service_account_name=dagster_pod_service_account_name,
+            restart_policy="Never",
             containers=[
                 client.V1Container(
                     name="spark-driver",
@@ -535,8 +536,7 @@ def calculated_southkorea_weather_daily_average_parquet(context: AssetExecutionC
                         "--conf", "spark.ui.prometheus.enabled=true",
                         "local:///app/jobs/weather_southkorea_daily_average_parquet.py",
                         "--date", request_date
-                    ],
-                    restart_policy="Never"
+                    ]
                 )
             ]
         )
