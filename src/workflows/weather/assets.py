@@ -542,8 +542,16 @@ def calculated_southkorea_weather_daily_average_parquet(context: AssetExecutionC
                     ],
                     env=[
                         client.V1EnvVar(
-                            name="LD_PRELOAD",
-                            value="/opt/bitnami/common/lib/libnss_wrapper.so"
+                            name="USER",
+                            value="spark"
+                        ),
+                        client.V1EnvVar(
+                            name="SPARK_USER",
+                            value="spark"
+                        ),
+                        client.V1EnvVar(
+                            name="HADOOP_USER_NAME",
+                            value="spark"
                         )
                     ]
                 )
