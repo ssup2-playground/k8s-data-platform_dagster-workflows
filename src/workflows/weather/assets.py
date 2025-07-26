@@ -560,23 +560,3 @@ def calculated_southkorea_weather_daily_average_parquet(context: AssetExecutionC
         if phase in ["Succeeded", "Failed"]:
             print(f"Pod '{spark_job_name}' has terminated with status: {phase}")
             break
-
-spark-submit \
-  --master k8s://192.168.1.71:6443 \
-  --deploy-mode client \
-  --name weather-southkorea-daily-average-parquet \
-  --driver-cores 1 \
-  --driver-memory 1g \
-  --executor-cores 1 \
-  --executor-memory 1g \
-  --conf spark.executor.instances=2 \
-  --conf spark.kubernetes.namespace=dagster \
-  --conf spark.kubernetes.container.image=ghcr.io/ssup2-playground/k8s-data-platform_spark-jobs:0.1.9 \
-  --conf spark.kubernetes.authenticate.serviceAccountName=dagster-workflows-dagster-user-deployments-user-deployments \
-  --conf spark.pyspark.python=/app/.venv/bin/python3 \
-  --conf spark.jars.ivy=/tmp/.ivy \
-  --conf spark.jars.packages=org.apache.hadoop:hadoop-aws:3.3.4,com.amazonaws:aws-java-sdk-bundle:1.12.262 \
-  --conf spark.eventLog.enabled=true \
-  --conf spark.eventLog.dir=s3a://spark/logs \
-  local:///app/jobs/weather_southkorea_daily_average_parquet.py \
-  --date 20250601
