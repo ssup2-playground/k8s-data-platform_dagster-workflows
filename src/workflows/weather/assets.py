@@ -525,9 +525,9 @@ def calculated_southkorea_weather_daily_average_parquet(context: AssetExecutionC
                         "--executor-memory", "1g",
                         "--conf", "spark.driver.host=" + f"spark://{spark_job_name}:7077",
                         "--conf", "spark.executor.instances=2",
-                        "--conf", "spark.kubernetes.namespace=spark",
-                        "--conf", "spark.kubernetes.container.image=ghcr.io/ssup2-playground/k8s-data-platform_spark-jobs:0.1.8",
-                        "--conf", "spark.pyspark.python=/app/.venv/bin/python3",
+                        "--conf", "spark.kubernetes.namespace=" + f"{dagster_pod_namespace}",
+                        "--conf", "spark.kubernetes.container.image=" + f"ghcr.io/ssup2-playground/k8s-data-platform_spark-jobs:0.1.8",
+                        "--conf", "spark.pyspark.python=" + f"/app/.venv/bin/python3",
                         "--conf", "spark.jars.ivy=/tmp/.ivy",
                         "--conf", "spark.jars.packages=org.apache.hadoop:hadoop-aws:3.3.4,com.amazonaws:aws-java-sdk-bundle:1.12.262",
                         "--conf", "spark.eventLog.enabled=true",
@@ -547,7 +547,7 @@ def calculated_southkorea_weather_daily_average_parquet(context: AssetExecutionC
         body=spark_driver_job
     )
 
-    # Wait for pod to be deleted with watch 
+    # Wait for pod to be deleted with watch
     v1 = client.CoreV1Api()
     w = watch.Watch()
     for event in w.stream(v1.read_namespaced_pod, name=spark_job_name, namespace=dagster_pod_namespace):
