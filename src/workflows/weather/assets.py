@@ -478,7 +478,8 @@ def calculated_southkorea_weather_daily_average_parquet(context: AssetExecutionC
             selector={"spark": spark_job_name},
             ports=[
                 client.V1ServicePort(port=7077, target_port=7077)
-            ]
+            ],
+            type="None"
         )
     )
 
@@ -525,7 +526,7 @@ def calculated_southkorea_weather_daily_average_parquet(context: AssetExecutionC
                         "--name", f"{spark_job_name}",
                         "--executor-cores", "1",
                         "--executor-memory", "1g",
-                        "--conf", "spark.driver.host=" + f"{spark_job_name}",
+                        "--conf", "spark.driver.host=" + f"{spark_job_name}.{dagster_pod_namespace}.svc.cluster.local.",
                         "--conf", "spark.driver.port=7077",
                         "--conf", "spark.executor.instances=2",
                         "--conf", "spark.kubernetes.authenticate.serviceAccountName=" + f"{dagster_pod_service_account_name}",
