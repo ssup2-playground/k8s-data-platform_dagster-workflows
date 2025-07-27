@@ -444,15 +444,15 @@ def transformed_southkorea_weather_daily_iceberg_parquet(context: AssetExecution
     tags={"schedule": "daily"}
 )
 def calculated_southkorea_weather_daily_average_parquet(context: AssetExecutionContext):
-    # Get job name
-    spark_job_name = f"southkorea-weather-daily-average-parquet-spark-{request_date}-{str(uuid.uuid4())[:8]}"
-    if len(spark_job_name) > 63:
-        spark_job_name = spark_job_name[:63]
-
     # Get date from partition key
     partition_date = context.partition_key
     dt = datetime.strptime(partition_date, "%Y-%m-%d")
     request_date = dt.strftime("%Y%m%d")
+
+    # Get job name
+    spark_job_name = f"southkorea-weather-daily-average-parquet-spark-{request_date}-{str(uuid.uuid4())[:8]}"
+    if len(spark_job_name) > 63:
+        spark_job_name = spark_job_name[:63]
 
     # Get dagster pod info
     dagster_pod_service_account_name = get_k8s_service_account_name()
