@@ -1,4 +1,5 @@
 import io
+import uuid
 from datetime import datetime
 
 import pandas as pd
@@ -448,8 +449,8 @@ def calculated_southkorea_weather_daily_average_parquet(context: AssetExecutionC
     dt = datetime.strptime(partition_date, "%Y-%m-%d")
     request_date = dt.strftime("%Y%m%d")
 
-    # Get spark driver pod name
-    spark_job_name = f"southkorea-weather-daily-average-parquet-spark-{request_date}"
+    # Get job name and dagster pod info
+    spark_job_name = f"southkorea-weather-daily-average-parquet-spark-{request_date}-{uuid.uuid4()}"
     dagster_pod_service_account_name = get_k8s_service_account_name()
     dagster_pod_namespace = get_k8s_pod_namespace()
     dagster_pod_name = get_k8s_pod_name()
@@ -479,14 +480,20 @@ def calculated_southkorea_weather_daily_average_parquet(context: AssetExecutionC
             ports=[
                 client.V1ServicePort(port=7077, target_port=7077)
             ],
-            type="None"
+            cluster_ip="None"
         )
     )
 
-    k8s_client.create_namespaced_service(
-        namespace=dagster_pod_namespace,
-        body=spark_driver_service
-    )
+    try:
+        k8s_client.create_namespaced_service(
+            namespace=dagster_pod_namespace,
+            body=spark_driver_service
+        )
+    except Exception as e:
+        context.log.error(f"Error creating spark driver service: {e}")
+        raise e
+    else:
+        context.log.info(f"Spark driver service created for {spark_job_name}")
 
     # Create spark driver pod
     spark_driver_job = client.V1Pod(
@@ -550,18 +557,34 @@ def calculated_southkorea_weather_daily_average_parquet(context: AssetExecutionC
         )
     )
 
-    k8s_client.create_namespaced_pod(
-        namespace=dagster_pod_namespace,
-        body=spark_driver_job
-    )
+    try:
+        k8s_client.create_namespaced_pod(
+            namespace=dagster_pod_namespace,
+            body=spark_driver_job
+        )
+    except Exception as e:
+        context.log.error(f"Error creating spark driver pod: {e}")
+        raise e
+    else:
+        context.log.info(f"Spark driver pod created for {spark_job_name}")
 
     # Wait for pod to be deleted with watch
     v1 = client.CoreV1Api()
     w = watch.Watch()
+    timed_out = True
+
     for event in w.stream(v1.list_namespaced_pod, namespace=dagster_pod_namespace, field_selector=f"metadata.name={spark_job_name}", timeout_seconds=600):
         pod = event["object"]
         phase = pod.status.phase
-        print(f"Pod phase: {phase}")
         if phase in ["Succeeded", "Failed"]:
-            print(f"Pod '{spark_job_name}' has terminated with status: {phase}")
+            timed_out = False
+            if phase == "Failed":
+                context.log.error(f"Pod '{spark_job_name}' has terminated with status: {phase}")
+                raise Exception(f"Pod '{spark_job_name}' has terminated with status: {phase}")
+            else:
+                context.log.info(f"Pod '{spark_job_name}' has terminated with status: {phase}")
             break
+
+    if timed_out:
+        context.log.error(f"Pod '{spark_job_name}' timed out")
+        raise Exception(f"Pod '{spark_job_name}' timed out")
