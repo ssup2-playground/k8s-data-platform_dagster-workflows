@@ -1,5 +1,4 @@
 import io
-import uuid
 from datetime import datetime
 
 import pandas as pd
@@ -8,11 +7,12 @@ import pyarrow.parquet as pq
 from pyiceberg.table import Table
 
 from dagster import asset, AssetExecutionContext
-from kubernetes import client, config, watch
 
-from workflows.configs import get_southkorea_weather_api_key, init_minio_client, get_iceberg_catalog, get_k8s_service_account_name, get_k8s_pod_namespace, get_k8s_pod_name, get_k8s_pod_uid
+from workflows.configs import get_southkorea_weather_api_key, init_minio_client, get_iceberg_catalog
 from workflows.weather.partitions import hourly_southkorea_weather_partitions, daily_southkorea_weather_partitions
+
 from utils.southkorea import get_southkorea_weather_data
+from utils.spark import execute_spark_job
 
 ## Constants
 MINIO_BUCKET = "weather"
@@ -449,148 +449,35 @@ def calculated_southkorea_weather_daily_average_parquet(context: AssetExecutionC
     dt = datetime.strptime(partition_date, "%Y-%m-%d")
     request_date = dt.strftime("%Y%m%d")
 
-    # Get job name
-    spark_job_name = f"southkorea-weather-daily-average-parquet-spark-{request_date}-{str(uuid.uuid4())[:8]}"
-    if len(spark_job_name) > 63:
-        spark_job_name = spark_job_name[:63]
-
-    # Get dagster pod info
-    dagster_pod_service_account_name = get_k8s_service_account_name()
-    dagster_pod_namespace = get_k8s_pod_namespace()
-    dagster_pod_name = get_k8s_pod_name()
-    dagster_pod_uid = get_k8s_pod_uid()
-
-    # Init kubernetes client
-    config.load_incluster_config()
-    k8s_client = client.CoreV1Api()
-
-    # Create spark driver service
-    spark_driver_service = client.V1Service(
-        api_version="v1",
-        kind="Service",
-        metadata=client.V1ObjectMeta(
-            name=spark_job_name,
-            owner_references=[
-                client.V1OwnerReference(
-                    api_version="v1",
-                    kind="Pod",
-                    name=dagster_pod_name,
-                    uid=dagster_pod_uid
-                )
-            ],
-        ),
-        spec=client.V1ServiceSpec(
-            selector={"spark": spark_job_name},
-            ports=[
-                client.V1ServicePort(port=7077, target_port=7077)
-            ],
-            cluster_ip="None"
-        )
+    # Execute Spark job using abstracted function
+    execute_spark_job(
+        context=context,
+        job_name_prefix="spark-daily-average-parquet-" + f"{request_date}",
+        job_script="local:///app/jobs/weather_southkorea_daily_average_parquet.py",
+        job_args=["--date", request_date],
+        spark_image="ghcr.io/ssup2-playground/k8s-data-platform_spark-jobs:0.1.10",
+        timeout_seconds=600
     )
 
-    try:
-        k8s_client.create_namespaced_service(
-            namespace=dagster_pod_namespace,
-            body=spark_driver_service
-        )
-    except Exception as e:
-        context.log.error(f"Error creating spark driver service: {e}")
-        raise e
-    else:
-        context.log.info(f"Spark driver service created for {spark_job_name}")
-
-    # Create spark driver pod
-    spark_driver_job = client.V1Pod(
-        api_version="v1",
-        kind="Pod",
-        metadata=client.V1ObjectMeta(
-            name=spark_job_name,
-            labels={
-                "spark": spark_job_name
-            },
-            annotations={
-                "prometheus.io/scrape": "true",
-                "prometheus.io/path": "/metrics/executors/prometheus",
-                "prometheus.io/port": "4040"
-            },
-            owner_references=[
-                client.V1OwnerReference(
-                    api_version="v1",
-                    kind="Pod",
-                    name=dagster_pod_name,
-                    uid=dagster_pod_uid
-                )
-            ]
-        ),
-        spec=client.V1PodSpec(
-            service_account_name=dagster_pod_service_account_name,
-            restart_policy="Never",
-            automount_service_account_token=True,
-            containers=[
-                client.V1Container(
-                    name="spark-driver",
-                    image="ghcr.io/ssup2-playground/k8s-data-platform_spark-jobs:0.1.10",
-                    args=[
-                        "spark-submit",
-                        "--master", "k8s://kubernetes.default.svc.cluster.local.:443",
-                        "--deploy-mode", "client",
-                        "--name", f"{spark_job_name}",
-                        "--conf", "spark.driver.host=" + f"{spark_job_name}.{dagster_pod_namespace}.svc.cluster.local.",
-                        "--conf", "spark.driver.port=7077",
-                        "--conf", "spark.executor.cores=1",
-                        "--conf", "spark.executor.memory=1g",
-                        "--conf", "spark.executor.instances=2",
-                        "--conf", "spark.pyspark.python=" + f"/app/.venv/bin/python3",
-                        "--conf", "spark.jars.packages=org.apache.hadoop:hadoop-aws:3.3.4,com.amazonaws:aws-java-sdk-bundle:1.12.262",
-                        "--conf", "spark.jars.ivy=/tmp/.ivy",
-                        "--conf", "spark.kubernetes.namespace=" + f"{dagster_pod_namespace}",
-                        "--conf", "spark.kubernetes.driver.pod.name=" + f"{spark_job_name}",
-                        "--conf", "spark.kubernetes.executor.podNamePrefix=" + f"{spark_job_name}",
-                        "--conf", "spark.kubernetes.container.image=" + f"ghcr.io/ssup2-playground/k8s-data-platform_spark-jobs:0.1.9",
-                        "--conf", "spark.kubernetes.executor.request.cores=1",
-                        "--conf", "spark.kubernetes.executor.limit.cores=2",
-                        "--conf", "spark.kubernetes.authenticate.serviceAccountName=" + f"{dagster_pod_service_account_name}",
-                        "--conf", "spark.kubernetes.authenticate.caCertFile=/var/run/secrets/kubernetes.io/serviceaccount/ca.crt",
-                        "--conf", "spark.kubernetes.authenticate.oauthTokenFile=/var/run/secrets/kubernetes.io/serviceaccount/token",
-                        "--conf", "spark.eventLog.enabled=true",
-                        "--conf", "spark.eventLog.dir=s3a://spark/logs",
-                        "--conf", "spark.ui.prometheus.enabled=true",
-                        "local:///app/jobs/weather_southkorea_daily_average_parquet.py",
-                        "--date", request_date
-                    ]
-                )
-            ]
-        )
+@asset(
+    key_prefix=["weather"],
+    group_name="weather",
+    description="Calculated daily south korea weather average data in Iceberg Parquet format",
+    deps=[calculated_southkorea_weather_daily_average_parquet],
+    partitions_def=daily_southkorea_weather_partitions,
+)
+def calculated_southkorea_weather_daily_average_iceberg_parquet(context: AssetExecutionContext):
+    # Get date from partition key
+    partition_date = context.partition_key
+    dt = datetime.strptime(partition_date, "%Y-%m-%d")
+    request_date = dt.strftime("%Y%m%d")
+    
+    # Execute Spark job using abstracted function
+    execute_spark_job(
+        context=context,
+        job_name_prefix="spark-daily-average-iceberg-parquet-" + f"{request_date}",
+        job_script="local:///app/jobs/weather_southkorea_daily_average_iceberg_parquet.py",
+        job_args=["--date", request_date],
+        spark_image="ghcr.io/ssup2-playground/k8s-data-platform_spark-jobs:0.1.10",
+        timeout_seconds=600
     )
-
-    try:
-        k8s_client.create_namespaced_pod(
-            namespace=dagster_pod_namespace,
-            body=spark_driver_job
-        )
-    except Exception as e:
-        context.log.error(f"Error creating spark driver pod: {e}")
-        raise e
-    else:
-        context.log.info(f"Spark driver pod created for {spark_job_name}")
-
-    # Wait for pod to be deleted with watch
-    v1 = client.CoreV1Api()
-    w = watch.Watch()
-    timed_out = True
-
-    for event in w.stream(v1.list_namespaced_pod, namespace=dagster_pod_namespace, field_selector=f"metadata.name={spark_job_name}", timeout_seconds=600):
-        pod = event["object"]
-        phase = pod.status.phase
-        if phase in ["Succeeded", "Failed"]:
-            timed_out = False
-            if phase == "Failed":
-                context.log.error(f"Pod '{spark_job_name}' has terminated with status: {phase}")
-                raise Exception(f"Pod '{spark_job_name}' has terminated with status: {phase}")
-            else:
-                context.log.info(f"Pod '{spark_job_name}' has terminated with status: {phase}")
-            break
-
-    if timed_out:
-        context.log.error(f"Pod '{spark_job_name}' timed out")
-        raise Exception(f"Pod '{spark_job_name}' timed out")
