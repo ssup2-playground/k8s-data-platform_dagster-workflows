@@ -4,7 +4,7 @@ from kubernetes import client, config, watch
 from workflows.configs import get_k8s_service_account_name, get_k8s_pod_namespace, get_k8s_pod_name, get_k8s_pod_uid
 
 def execute_spark_job(context, job_name_prefix: str, job_script: str, job_args: list, 
-                     spark_image: str, timeout_seconds: int = 600):
+                     spark_image: str, jars: list, timeout_seconds: int = 600):
     """Execute a Spark job on Kubernetes"""
     # Get job name with unique suffix
     spark_job_name = f"{job_name_prefix}-{str(uuid.uuid4())[:8]}"
@@ -96,8 +96,8 @@ def execute_spark_job(context, job_name_prefix: str, job_script: str, job_args: 
                         "--conf", "spark.executor.cores=1",
                         "--conf", "spark.executor.memory=1g",
                         "--conf", "spark.executor.instances=2",
-                        "--conf", "spark.pyspark.python=" + f"/app/.venv/bin/python3",
-                        "--conf", "spark.jars.packages=org.apache.hadoop:hadoop-aws:3.3.4,com.amazonaws:aws-java-sdk-bundle:1.12.262",
+                        "--conf", "spark.pyspark.python=/app/.venv/bin/python3",
+                        "--conf", "spark.jars.packages=" + ",".join(jars),
                         "--conf", "spark.jars.ivy=/tmp/.ivy",
                         "--conf", "spark.kubernetes.namespace=" + f"{dagster_pod_namespace}",
                         "--conf", "spark.kubernetes.driver.pod.name=" + f"{spark_job_name}",

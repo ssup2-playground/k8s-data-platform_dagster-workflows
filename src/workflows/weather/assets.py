@@ -456,6 +456,7 @@ def calculated_southkorea_weather_daily_average_parquet(context: AssetExecutionC
         job_script="local:///app/jobs/weather_southkorea_daily_average_parquet.py",
         job_args=["--date", request_date],
         spark_image="ghcr.io/ssup2-playground/k8s-data-platform_spark-jobs:0.1.10",
+        jars=["org.apache.hadoop:hadoop-aws:3.3.4", "com.amazonaws:aws-java-sdk-bundle:1.12.262"],
         timeout_seconds=600
     )
 
@@ -481,5 +482,6 @@ def calculated_southkorea_weather_daily_average_iceberg_parquet(context: AssetEx
         job_script="local:///app/jobs/weather_southkorea_daily_average_iceberg_parquet.py",
         job_args=["--date", request_date],
         spark_image="ghcr.io/ssup2-playground/k8s-data-platform_spark-jobs:0.1.10",
+        jars=["org.apache.hadoop:hadoop-aws:3.3.4", "com.amazonaws:aws-java-sdk-bundle:1.12.262", "org.apache.iceberg:iceberg-spark3-runtime:0.13.2"],
         timeout_seconds=600
     )
