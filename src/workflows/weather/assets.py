@@ -463,8 +463,10 @@ def calculated_southkorea_weather_daily_average_parquet(context: AssetExecutionC
     key_prefix=["weather"],
     group_name="weather",
     description="Calculated daily south korea weather average data in Iceberg Parquet format",
-    deps=[calculated_southkorea_weather_daily_average_parquet],
+    deps=[transformed_southkorea_weather_daily_iceberg_parquet],
     partitions_def=daily_southkorea_weather_partitions,
+    kinds=["python"],
+    tags={"schedule": "daily"}
 )
 def calculated_southkorea_weather_daily_average_iceberg_parquet(context: AssetExecutionContext):
     # Get date from partition key
