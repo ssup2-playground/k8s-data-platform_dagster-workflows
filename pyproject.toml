@@ -4,6 +4,7 @@ version = "0.1.0"
 readme = "README.md"
 requires-python = ">=3.9"
 dependencies = [
+    "clt-queued-run-coordinator",
     "dagster>=1.10.15",
     "dagster-aws>=0.26.15",
     "dagster-celery-k8s>=0.26.15",
@@ -18,3 +19,6 @@ dependencies = [
     "pyiceberg>=0.9.1",
     "thrift>=0.21.0",
 ]
+
+[tool.uv.sources]
+clt-queued-run-coordinator = { git = "https://github.com/ssup2/dagster-clt-queued-run-coordinator.git" }

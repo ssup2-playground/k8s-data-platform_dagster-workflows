@@ -378,6 +378,14 @@ wheels = [
 ]
 
 [[package]]
+name = "clt-queued-run-coordinator"
+version = "1.10.0"
+source = { git = "https://github.com/ssup2/dagster-clt-queued-run-coordinator.git#01aefbbcb10ee724b1e0090ff227b4cbe064e30c" }
+dependencies = [
+    { name = "dagster" },
+]
+
+[[package]]
 name = "colorama"
 version = "0.4.6"
 source = { registry = "https://pypi.org/simple" }
@@ -958,6 +966,7 @@ name = "k8s-data-platform-dagster-workflows"
 version = "0.1.0"
 source = { virtual = "." }
 dependencies = [
+    { name = "clt-queued-run-coordinator" },
     { name = "dagster" },
     { name = "dagster-aws" },
     { name = "dagster-celery-k8s" },
@@ -975,6 +984,7 @@ dependencies = [
 
 [package.metadata]
 requires-dist = [
+    { name = "clt-queued-run-coordinator", git = "https://github.com/ssup2/dagster-clt-queued-run-coordinator.git" },
     { name = "dagster", specifier = ">=1.10.15" },
     { name = "dagster-aws", specifier = ">=0.26.15" },
     { name = "dagster-celery-k8s", specifier = ">=0.26.15" },
