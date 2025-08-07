@@ -378,14 +378,6 @@ wheels = [
 ]
 
 [[package]]
-name = "clt-queued-run-coordinator"
-version = "1.10.0"
-source = { git = "https://github.com/ssup2/dagster-clt-queued-run-coordinator.git#01aefbbcb10ee724b1e0090ff227b4cbe064e30c" }
-dependencies = [
-    { name = "dagster" },
-]
-
-[[package]]
 name = "colorama"
 version = "0.4.6"
 source = { registry = "https://pypi.org/simple" }
@@ -487,6 +479,18 @@ dependencies = [
 sdist = { url = "https://files.pythonhosted.org/packages/65/bf/75079f38d8515a2ca9d2907494106e70b01fd6d097fafd605cc20983b037/dagster_celery_k8s-0.26.15.tar.gz", hash = "sha256:c1378eefe11a5eb0c5acd6e65bbec6dc72e2853116ae16ef54776e3a20224f36", size = 16045, upload-time = "2025-05-15T18:45:05.983Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/ae/42/4d2523237102130dc4cadb8306ddb55a58dd2b478736ab98f432a1a11c79/dagster_celery_k8s-0.26.15-py3-none-any.whl", hash = "sha256:b979074d30fbb4de013f207e9d825c5b85b8ee1fe2bc7512c6bfcfc95f12fda0", size = 18035, upload-time = "2025-05-15T18:45:04.913Z" },
+]
+
+[[package]]
+name = "dagster-clt-queued-run-coordinator"
+version = "0.1.0"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "dagster" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/94/99/6c619673c1b7830c3d00333dd9519f4f275001c9e7575562666580e06797/dagster_clt_queued_run_coordinator-0.1.0.tar.gz", hash = "sha256:190e955b3d101237406c0d6495657323ac0e4c96fe789c252d988c9f8685ef38", size = 3678, upload-time = "2025-08-07T16:38:59.392Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/62/bd/d086eb90d66c7561f41d8786c369eb41e8bd0c6b0af810de8aa311cb7f7d/dagster_clt_queued_run_coordinator-0.1.0-py3-none-any.whl", hash = "sha256:3910b9d31f6df074aa7afe964b953ceb33090df7b77e8e2af4d5811147586e6d", size = 4311, upload-time = "2025-08-07T16:38:58.336Z" },
 ]
 
 [[package]]
@@ -966,10 +970,10 @@ name = "k8s-data-platform-dagster-workflows"
 version = "0.1.0"
 source = { virtual = "." }
 dependencies = [
-    { name = "clt-queued-run-coordinator" },
     { name = "dagster" },
     { name = "dagster-aws" },
     { name = "dagster-celery-k8s" },
+    { name = "dagster-clt-queued-run-coordinator" },
     { name = "dagster-k8s" },
     { name = "dagster-obstore" },
     { name = "dagster-postgres" },
@@ -984,10 +988,10 @@ dependencies = [
 
 [package.metadata]
 requires-dist = [
-    { name = "clt-queued-run-coordinator", git = "https://github.com/ssup2/dagster-clt-queued-run-coordinator.git" },
     { name = "dagster", specifier = ">=1.10.15" },
     { name = "dagster-aws", specifier = ">=0.26.15" },
     { name = "dagster-celery-k8s", specifier = ">=0.26.15" },
+    { name = "dagster-clt-queued-run-coordinator", specifier = ">=0.1.0" },
     { name = "dagster-k8s", specifier = ">=0.26.15" },
     { name = "dagster-obstore", specifier = ">=0.2.3" },
     { name = "dagster-postgres", specifier = ">=0.26.15" },
