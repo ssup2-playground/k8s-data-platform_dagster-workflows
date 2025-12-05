@@ -1,4 +1,4 @@
-from dagster import op
+from dagster import op, OpExecutionContext
 
 @op(description="Generate a list of numbers from 1 to 10",
     tags={
@@ -12,7 +12,8 @@ from dagster import op
             },
         }
     })
-def generate_numbers():
+def generate_numbers(context: OpExecutionContext):
+    context.log.info("Generating a list of numbers from 1 to 10")
     return list(range(1, 11))
 
 @op(description="Filter even numbers from the list",
@@ -27,7 +28,8 @@ def generate_numbers():
             },
         }
     })
-def filter_even_numbers(numbers):
+def filter_even_numbers(context: OpExecutionContext, numbers):
+    context.log.info("Filtering even numbers from the list")
     return [num for num in numbers if num % 2 == 0]
 
 @op(description="Filter odd numbers from the list",
@@ -42,7 +44,8 @@ def filter_even_numbers(numbers):
             },
         }
     })
-def filter_odd_numbers(numbers):
+def filter_odd_numbers(context: OpExecutionContext, numbers):
+    context.log.info("Filtering odd numbers from the list")
     return [num for num in numbers if num % 2 != 0]
 
 @op(description="Sum the given list of even numbers",
@@ -57,7 +60,8 @@ def filter_odd_numbers(numbers):
             },
         }
     })
-def sum_even_numbers(numbers):
+def sum_even_numbers(context: OpExecutionContext, numbers):
+    context.log.info("Summing the even numbers")
     return sum(numbers)
 
 @op(description="Sum the given list of odd numbers",
@@ -72,7 +76,8 @@ def sum_even_numbers(numbers):
             },
         }
     })
-def sum_odd_numbers(numbers):
+def sum_odd_numbers(context: OpExecutionContext, numbers):
+    context.log.info("Summing the odd numbers")
     return sum(numbers)
 
 @op(description="Sum two sums",
@@ -87,5 +92,6 @@ def sum_odd_numbers(numbers):
             },
         }
     })
-def sum_two_sums(first_number, second_number):
+def sum_two_sums(context: OpExecutionContext, first_number, second_number):
+    context.log.info("Summing the two sums")
     return first_number + second_number

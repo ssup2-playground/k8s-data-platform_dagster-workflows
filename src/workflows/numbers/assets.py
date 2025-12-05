@@ -1,4 +1,4 @@
-from dagster import asset
+from dagster import asset, AssetExecutionContext
 
 @asset(key_prefix=["numbers"], 
     group_name="numbers",
@@ -14,7 +14,8 @@ from dagster import asset
             },
         }
     })
-def generated_numbers():
+def generated_numbers(context: AssetExecutionContext):
+    context.log.info("Generating a list of numbers from 1 to 10")
     return list(range(1, 11))
 
 @asset(key_prefix=["numbers"],
@@ -31,7 +32,8 @@ def generated_numbers():
             },
         }
     })
-def filtered_even_numbers(generated_numbers):
+def filtered_even_numbers(context: AssetExecutionContext, generated_numbers):
+    context.log.info("Filtering even numbers from the list")
     return [num for num in generated_numbers if num % 2 == 0]
 
 @asset(key_prefix=["numbers"],
@@ -48,7 +50,8 @@ def filtered_even_numbers(generated_numbers):
             },
         }
     })
-def filtered_odd_numbers(generated_numbers):
+def filtered_odd_numbers(context: AssetExecutionContext, generated_numbers):
+    context.log.info("Filtering odd numbers from the list")
     return [num for num in generated_numbers if num % 2 != 0]
 
 @asset(key_prefix=["numbers"],
@@ -65,7 +68,8 @@ def filtered_odd_numbers(generated_numbers):
             },
         }
     })
-def summed_even_numbers(filtered_even_numbers):
+def summed_even_numbers(context: AssetExecutionContext, filtered_even_numbers):
+    context.log.info("Summing the even numbers")
     return sum(filtered_even_numbers)
 
 @asset(key_prefix=["numbers"],
@@ -82,7 +86,8 @@ def summed_even_numbers(filtered_even_numbers):
             },
         }
     })
-def summed_odd_numbers(filtered_odd_numbers):
+def summed_odd_numbers(context: AssetExecutionContext, filtered_odd_numbers):
+    context.log.info("Summing the odd numbers")
     return sum(filtered_odd_numbers)
 
 @asset(key_prefix=["numbers"],
@@ -99,5 +104,6 @@ def summed_odd_numbers(filtered_odd_numbers):
             },
         }
     })
-def summed_two_sums(summed_even_numbers, summed_odd_numbers):
+def summed_two_sums(context: AssetExecutionContext, summed_even_numbers, summed_odd_numbers):
+    context.log.info("Summing the two sums")
     return summed_even_numbers + summed_odd_numbers
