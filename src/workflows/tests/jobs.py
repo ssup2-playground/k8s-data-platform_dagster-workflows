@@ -6,7 +6,6 @@ from workflows.tests.ops import printing_logs
 def print_logs():
     printing_logs()
 
-
 print_logs_asset= define_asset_job(
     name="print_logs_asset",
     selection=AssetSelection.groups("tests"),
