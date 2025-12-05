@@ -2,6 +2,9 @@ from dagster import Definitions
 
 from workflows.configs import init_io_manager
 
+from workflows.tests.assets import printed_logs
+from workflows.tests.jobs import print_logs, print_logs_asset
+
 from workflows.numbers.jobs import process_numbers, process_numbers_k8s, process_numbers_k8s_celery, process_numbers_asset, process_numbers_asset_k8s, process_numbers_asset_k8s_celery
 from workflows.numbers.assets import generated_numbers, filtered_even_numbers, filtered_odd_numbers, summed_even_numbers, summed_odd_numbers, summed_two_sums
 from workflows.numbers.schedules import schedule_numbers_every_minute, schedule_numbers_k8s_every_minute, schedule_numbers_celery_every_minute, schedule_numbers_asset_every_minute, schedule_numbers_asset_k8s_every_minute, schedule_numbers_asset_k8s_celery_every_minute
@@ -16,6 +19,9 @@ from workflows.weather.schedules import schedule_weather_southkorea_hourly, sche
 
 defs = Definitions(
     assets=[
+        # Tests
+        printed_logs,
+
         # Numbers
         generated_numbers,
         filtered_even_numbers,
@@ -40,6 +46,10 @@ defs = Definitions(
         calculated_southkorea_weather_daily_average_iceberg_parquet,
     ],
     jobs=[
+        # Tests
+        print_logs,
+        print_logs_asset,
+
         # Numbers
         process_numbers,
         process_numbers_k8s,
