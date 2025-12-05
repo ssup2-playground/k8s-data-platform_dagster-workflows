@@ -2,13 +2,13 @@ from dagster import job, define_asset_job, multiprocess_executor, AssetSelection
 
 from workflows.tests.ops import printing_logs
 
-@job(description="Print logs")
+@job()
 def print_logs():
     printing_logs()
 
 
 print_logs_asset= define_asset_job(
-    name="print_logs_asset_job",
+    name="print_logs_asset",
     selection=AssetSelection.groups("tests"),
     executor_def=multiprocess_executor,
     tags={
