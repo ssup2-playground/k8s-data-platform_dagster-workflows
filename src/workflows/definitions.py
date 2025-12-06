@@ -2,8 +2,8 @@ from dagster import Definitions
 
 from workflows.configs import init_io_manager
 
-from workflows.tests.assets import printed_logs
-from workflows.tests.jobs import print_logs, print_logs_asset
+from workflows.tests.assets import printed_logs, failed_asset
+from workflows.tests.jobs import print_logs, print_logs_asset, fail_job, failed_job_asset
 
 from workflows.numbers.jobs import process_numbers, process_numbers_k8s, process_numbers_k8s_celery, process_numbers_asset, process_numbers_asset_k8s, process_numbers_asset_k8s_celery
 from workflows.numbers.assets import generated_numbers, filtered_even_numbers, filtered_odd_numbers, summed_even_numbers, summed_odd_numbers, summed_two_sums
@@ -21,6 +21,7 @@ defs = Definitions(
     assets=[
         # Tests
         printed_logs,
+        failed_asset,
 
         # Numbers
         generated_numbers,
@@ -49,6 +50,8 @@ defs = Definitions(
         # Tests
         print_logs,
         print_logs_asset,
+        fail_job,
+        failed_job_asset,
 
         # Numbers
         process_numbers,
