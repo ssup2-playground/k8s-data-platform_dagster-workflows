@@ -1,4 +1,5 @@
 import logging
+import sys
 
 from dagster import asset, AssetExecutionContext
 
@@ -16,23 +17,38 @@ def printed_logs(context: AssetExecutionContext):
     context.log.exception("dagster asset exception")
     context.log.critical("dagster asset critical")
 
-    # Python logger without dagster managed
-    unmanaged_logger = logging.getLogger("unmanaged_logger")
-    unmanaged_logger.debug("unmanaged asset debug")
-    unmanaged_logger.info("unmanaged asset info")
-    unmanaged_logger.warning("unmanaged asset warning")
-    unmanaged_logger.error("unmanaged asset error")
-    unmanaged_logger.exception("unmanaged asset exception")
-    unmanaged_logger.critical("unmanaged asset critical")
+    # Python logger
+    logger = logging.getLogger("unmanaged_logger")
+    logger.setLevel(logging.DEBUG)
+    logger.debug("python logger debug")
+    logger.info("python logger info")
+    logger.warning("python logger warning")
+    logger.error("python logger error")
+    logger.exception("python logger exception")
+    logger.critical("python logger critical")
 
-    # Python logger with dagster managed
-    managed_logger = logging.getLogger("managed_logger")
-    managed_logger.debug("managed asset debug")
-    managed_logger.info("managed asset info")
-    managed_logger.warning("managed asset warning")
-    managed_logger.error("managed asset error")
-    managed_logger.exception("managed asset exception")
-    managed_logger.critical("managed asset critical")
+    # Python stdout logger 
+    stdout_logger = logging.getLogger("stdout_logger")
+    stdout_logger.setLevel(logging.DEBUG)
+    stdout_logger.addHandler(logging.StreamHandler(sys.stdout))
+    stdout_logger.debug("stdout logger debug")
+    stdout_logger.info("stdout logger info")
+    stdout_logger.warning("stdout logger warning")
+    stdout_logger.error("stdout logger error")
+    stdout_logger.exception("stdout logger exception")
+    stdout_logger.critical("stdout logger critical")
+
+    # python stderr logger
+    stderr_logger = logging.getLogger("stderr_logger")
+    stderr_logger.setLevel(logging.DEBUG)
+    stderr_logger.addHandler(logging.StreamHandler(sys.stderr))
+    stderr_logger.debug("stderr logger debug")
+    stderr_logger.info("stderr logger info")
+    stderr_logger.warning("stderr logger warning")
+    stderr_logger.error("stderr logger error")
+    stderr_logger.exception("stderr logger exception")
+    stderr_logger.critical("stderr logger critical")
+    
     return None
 
 @asset(key_prefix=["tests"], 
