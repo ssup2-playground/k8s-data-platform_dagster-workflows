@@ -1,6 +1,6 @@
 from dagster import Definitions
 
-from workflows.configs import init_io_manager
+from workflows.configs import init_io_manager, init_stdout_logger
 
 from workflows.tests.assets import printed_logs, failed_asset
 from workflows.tests.jobs import print_logs, print_logs_asset, fail_job, failed_job_asset
@@ -88,4 +88,5 @@ defs = Definitions(
         schedule_weather_southkorea_daily,
     ],
     resources=init_io_manager(),
+    loggers={"console": init_stdout_logger},
 )

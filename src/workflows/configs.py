@@ -1,11 +1,17 @@
 import os
+import sys
+import logging
 
 from minio import Minio
 
 from pyiceberg.catalog.hive import HiveCatalog
 
+import dagster as dg
 from dagster import fs_io_manager
 from dagster_aws.s3 import s3_pickle_io_manager, s3_resource
+
+sys.stderr = sys.stdout
+logging.getLogger().handlers = []
 
 # Set configs from envs
 K8S_SERVICE_ACCOUNT_NAME = os.getenv("K8S_SERVICE_ACCOUNT_NAME", "default")
@@ -72,6 +78,31 @@ def init_io_manager() -> dict:
         }
     else:
         return {"io_manager": fs_io_manager}
+
+@dg.logger
+def init_stdout_logger(init_context):
+    logger_ = logging.getLogger("dagster_stdout")
+    
+    # [⭐ 최종 추가] Dagster 프레임워크 핵심 로거의 핸들러를 제거
+    # (Root Logger를 비웠지만, 'dagster' 로거에 특정 핸들러가 붙어있을 수 있습니다.)
+    dagster_core_logger = logging.getLogger("dagster")
+    dagster_core_logger.handlers = [] # 핵심 로거 핸들러 제거
+    
+    # 3. Custom Logger 설정 (유지)
+    logger_.setLevel(logging.DEBUG)
+    logger_.handlers = [] 
+    logger_.propagate = False 
+    
+    # 4. 단 하나의 stdout 핸들러만 추가
+    if not logger_.handlers:
+        handler = logging.StreamHandler(sys.stdout)
+        formatter = logging.Formatter(
+            '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+        )
+        handler.setFormatter(formatter)
+        logger_.addHandler(handler)
+        
+    return logger_
 
 # Weather
 def get_southkorea_weather_api_key() -> str:
