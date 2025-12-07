@@ -6,12 +6,12 @@ from dagster import op, OpExecutionContext
 @op(description="Printing logs")
 def printing_logs(context: OpExecutionContext):
     # Default dagster logger
-    context.log.debug("dagster op debug")
-    context.log.info("dagster op info")
-    context.log.warning("dagster op warning")
-    context.log.error("dagster op error")
-    context.log.exception("dagster op exception")
-    context.log.critical("dagster op critical")
+    context.log.debug("dagster logger debug")
+    context.log.info("dagster logger info")
+    context.log.warning("dagster logger warning")
+    context.log.error("dagster logger error")
+    context.log.exception("dagster logger exception")
+    context.log.critical("dagster logger critical")
 
     # Python logger
     logger = logging.getLogger("python_logger")
@@ -44,7 +44,7 @@ def printing_logs(context: OpExecutionContext):
     stderr_logger.error("stderr logger error")
     stderr_logger.exception("stderr logger exception")
     stderr_logger.critical("stderr logger critical")
-    
+
     return None
 
 @op(description="Failing op")
