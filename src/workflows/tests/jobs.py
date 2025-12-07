@@ -4,29 +4,7 @@ from workflows.tests.ops import printing_logs, failing_op
 
 @job()
 def print_logs():
-    import logging
-    import sys
-    """모든 로거와 핸들러 출력"""
-    for name, logger in logging.Logger.manager.loggerDict.items():
-        if isinstance(logger, logging.Logger):
-            print(f"Logger: {name}")
-            print(f"  handlers: {logger.handlers}")
-            print(f"  propagate: {logger.propagate}")
-            for h in logger.handlers:
-                if isinstance(h, logging.StreamHandler):
-                    stream_name = "stdout" if h.stream == sys.stdout else "stderr" if h.stream == sys.stderr else "other"
-                    print(f"    -> StreamHandler: {stream_name}")
-    
-    # root logger도 확인
-    root = logging.getLogger()
-    print(f"Root logger handlers: {root.handlers}")
-    for h in root.handlers:
-        if isinstance(h, logging.StreamHandler):
-            stream_name = "stdout" if h.stream == sys.stdout else "stderr" if h.stream == sys.stderr else "other"
-            print(f"  -> StreamHandler: {stream_name}")
-
     printing_logs()
-
 
 @job()
 def fail_job():

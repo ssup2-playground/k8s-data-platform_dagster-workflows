@@ -1,6 +1,3 @@
-import logging
-import sys
-
 from dagster import op, OpExecutionContext
 
 @op(description="Printing logs")
