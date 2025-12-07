@@ -31,7 +31,7 @@ def printed_logs(context: AssetExecutionContext):
     stdout_logger = logging.getLogger("stdout_logger")
     stdout_logger.setLevel(logging.DEBUG)
     #stdout_logger.addHandler(logging.StreamHandler(sys.stdout))
-    #stdout_logger.propagate = False
+    stdout_logger.propagate = False
     stdout_logger.debug("stdout logger debug")
     stdout_logger.info("stdout logger info")
     stdout_logger.warning("stdout logger warning")
@@ -43,7 +43,7 @@ def printed_logs(context: AssetExecutionContext):
     stderr_logger = logging.getLogger("stderr_logger")
     stderr_logger.setLevel(logging.DEBUG)
     #stderr_logger.addHandler(logging.StreamHandler(sys.stderr))
-    #stderr_logger.propagate = False
+    stderr_logger.propagate = False
     stderr_logger.debug("stderr logger debug")
     stderr_logger.info("stderr logger info")
     stderr_logger.warning("stderr logger warning")
