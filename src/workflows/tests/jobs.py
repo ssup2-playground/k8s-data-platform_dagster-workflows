@@ -1,10 +1,18 @@
 from dagster import job, define_asset_job, multiprocess_executor, AssetSelection
 
-from workflows.tests.ops import printing_logs, failing_op
+from workflows.tests.ops import printing_logs, printing_hello_k8s_job_op, printing_hello_execute_k8s_job, failing_op
 
 @job()
 def print_logs():
     printing_logs()
+
+@job()
+def print_hello_k8s_job_op():
+    printing_hello_k8s_job_op()
+
+@job()
+def print_hello_execute_k8s_job():
+    printing_hello_execute_k8s_job()
 
 @job()
 def fail_job():
