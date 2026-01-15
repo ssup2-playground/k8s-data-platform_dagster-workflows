@@ -181,7 +181,7 @@ def get_southkorea_weather_data(api_key: str, request_date: str, request_hour: s
 
             # Check response
             if (response.status_code == 200 and
-                response.headers.get("content-type") == "application/json;charset=UTF-8" and
+                response.headers.get("content-type") == "application/json; charset=UTF-8" and
                 response.json()["response"]["header"]["resultCode"] == "00"):
                 branch_id_response[branch_id] = response.json()
                 break
