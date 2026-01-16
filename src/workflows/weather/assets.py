@@ -8,11 +8,10 @@ from pyiceberg.table import Table
 
 from dagster import asset, AssetExecutionContext
 
-from workflows.configs import get_southkorea_weather_api_key, init_minio_client, get_iceberg_catalog
+from workflows.configs import get_southkorea_weather_api_key, init_minio_client, get_iceberg_catalog, HIVE_CATALOG_URI
 from workflows.weather.partitions import hourly_southkorea_weather_partitions, daily_southkorea_weather_partitions
 
 from utils.southkorea import get_southkorea_weather_data
-from utils.spark import execute_spark_job
 
 ## Constants
 MINIO_BUCKET = "weather"
@@ -24,6 +23,10 @@ MINIO_DIRECTORY_SOUTHKOREA_DAILY_PARQUET = "southkorea/daily-parquet"
 
 ICEBERG_TABLE_HOURLY = "weather.southkorea_hourly_iceberg_parquet"
 ICEBERG_TABLE_DAILY = "weather.southkorea_daily_iceberg_parquet"
+
+ICEBERG_DAILY_AVERAGE_PYICEBERG_TABLE = "weather.southkorea_daily_average_iceberg_parquet"
+ICEBERG_DAILY_AVERAGE_SPARK_TABLE = "iceberg.weather.southkorea_daily_average_iceberg_parquet"
+ICEBERG_DAILY_SPARK_TABLE = "iceberg.weather.southkorea_daily_iceberg_parquet"
 
 ## Functions
 def get_hourly_csv_object_name(date: str, hour: str) -> str:
@@ -441,24 +444,81 @@ def transformed_southkorea_weather_daily_iceberg_parquet(context: AssetExecution
     deps=[transformed_southkorea_weather_daily_parquet],
     partitions_def=daily_southkorea_weather_partitions,
     kinds=["python"],
-    tags={"schedule": "daily"}
+    tags={"schedule": "daily"},
+    required_resource_keys={"pyspark"}
 )
 def calculated_southkorea_weather_daily_average_parquet(context: AssetExecutionContext):
     # Get date from partition key
     partition_date = context.partition_key
     dt = datetime.strptime(partition_date, "%Y-%m-%d")
     request_date = dt.strftime("%Y%m%d")
+    year = int(request_date[0:4])
+    month = int(request_date[4:6])
+    day = int(request_date[6:8])
 
-    # Execute Spark job using abstracted function
-    execute_spark_job(
-        context=context,
-        job_name_prefix="spark-daily-average-parquet-" + f"{request_date}",
-        job_script="local:///app/jobs/weather_southkorea_daily_average_parquet.py",
-        job_args=["--date", request_date],
-        spark_image="ghcr.io/ssup2-playground/k8s-data-platform_spark-jobs:0.1.10",
-        jars=["org.apache.hadoop:hadoop-aws:3.3.4", "com.amazonaws:aws-java-sdk-bundle:1.12.262"],
-        timeout_seconds=600
+    # Check if average data exists in MinIO
+    minio_client = init_minio_client()
+    daily_average_parquet_path = (
+        f"southkorea/daily-average-parquet/"
+        f"year={year}/"
+        f"month={month}/"
+        f"day={day}"
     )
+    try:
+        minio_client.stat_object(MINIO_BUCKET, f"{daily_average_parquet_path}/_SUCCESS")
+        context.log.info("Data already exists in MinIO")
+        return 0
+    except Exception as e:
+        if "NoSuchKey" not in str(e):
+            context.log.error(f"Unexpected error: {e}")
+            return 1
+
+    # Get Spark session from PySparkResource
+    spark = context.resources.pyspark.spark_session
+    spark.sparkContext.setLogLevel("INFO")
+    
+    # Read data from parquet
+    daily_parquet_name = get_daily_parquet_object_name(request_date)
+    df = spark.read.parquet(f"s3a://{MINIO_BUCKET}/{daily_parquet_name}")
+    
+    # Create temporary view
+    TEMP_PARQUET_TABLE = "weather_southkorea_daily_parquet"
+    df.createOrReplaceTempView(TEMP_PARQUET_TABLE)
+
+    # Calculate average
+    query = f"""
+    SELECT
+        branch_name,
+        AVG(temp) as avg_temp,
+        AVG(rain) as avg_rain,
+        AVG(snow) as avg_snow,
+        AVG(cloud_cover_total) as avg_cloud_cover_total,
+        AVG(cloud_cover_lowmiddle) as avg_cloud_cover_lowmiddle,
+        AVG(cloud_lowest) as avg_cloud_lowest,
+        AVG(humidity) as avg_humidity,
+        AVG(wind_speed) as avg_wind_speed,
+        AVG(pressure_local) as avg_pressure_local,
+        AVG(pressure_sea) as avg_pressure_sea,
+        AVG(pressure_vaper) as avg_pressure_vaper,
+        AVG(dew_point) as avg_dew_point
+    FROM {TEMP_PARQUET_TABLE}
+    GROUP BY branch_name
+    """
+    
+    result_df = spark.sql(query)
+    
+    # Display results
+    result_df.show(truncate=False)
+    
+    # Save results to MinIO
+    result_df.write \
+        .format("parquet") \
+        .option("compression", "none") \
+        .option("path", f"s3a://{MINIO_BUCKET}/{daily_average_parquet_path}") \
+        .mode("overwrite") \
+        .save()
+    
+    context.log.info(f"Successfully saved daily average data to {daily_average_parquet_path}")
 
 @asset(
     key_prefix=["weather"],
@@ -467,21 +527,73 @@ def calculated_southkorea_weather_daily_average_parquet(context: AssetExecutionC
     deps=[transformed_southkorea_weather_daily_iceberg_parquet],
     partitions_def=daily_southkorea_weather_partitions,
     kinds=["python"],
-    tags={"schedule": "daily"}
+    tags={"schedule": "daily"},
+    required_resource_keys={"pyspark"}
 )
 def calculated_southkorea_weather_daily_average_iceberg_parquet(context: AssetExecutionContext):
     # Get date from partition key
     partition_date = context.partition_key
     dt = datetime.strptime(partition_date, "%Y-%m-%d")
     request_date = dt.strftime("%Y%m%d")
+    year = int(request_date[0:4])
+    month = int(request_date[4:6])
+    day = int(request_date[6:8])
+
+    # Get Iceberg catalog and check if data exists
+    catalog = get_iceberg_catalog()
     
-    # Execute Spark job using abstracted function
-    execute_spark_job(
-        context=context,
-        job_name_prefix="spark-daily-average-iceberg-parquet-" + f"{request_date}",
-        job_script="local:///app/jobs/weather_southkorea_daily_average_iceberg_parquet.py",
-        job_args=["--date", request_date],
-        spark_image="ghcr.io/ssup2-playground/k8s-data-platform_spark-jobs:0.1.10",
-        jars=["org.apache.hadoop:hadoop-aws:3.3.4", "com.amazonaws:aws-java-sdk-bundle:1.12.262", "org.apache.iceberg:iceberg-spark3-runtime:0.13.2"],
-        timeout_seconds=600
-    )
+    try:
+        daily_average_table = catalog.load_table(ICEBERG_DAILY_AVERAGE_PYICEBERG_TABLE)
+        if check_partition_exists_by_date(daily_average_table, request_date):
+            context.log.info(f"Data already exists in Iceberg table for date {request_date}")
+            return 0
+    except Exception as e:
+        context.log.warning(f"Could not check Iceberg table: {e}")
+
+    # Get Spark session from PySparkResource
+    spark = context.resources.pyspark.spark_session
+    spark.sparkContext.setLogLevel("INFO")
+    
+    # Configure Spark for Iceberg (additional settings beyond common config)
+    spark.conf.set("hive.metastore.uris", HIVE_CATALOG_URI)
+    spark.conf.set("spark.sql.catalog.uri", HIVE_CATALOG_URI)
+    spark.conf.set("spark.sql.catalog.iceberg", "org.apache.iceberg.spark.SparkCatalog")
+    spark.conf.set("spark.sql.catalog.iceberg.type", "hive")
+    
+    # Calculate average from Iceberg table
+    avg_query = f"""
+    SELECT
+        branch_name,
+        AVG(temp) as avg_temp,
+        AVG(rain) as avg_rain,
+        AVG(snow) as avg_snow,
+        AVG(cloud_cover_total) as avg_cloud_cover_total,
+        AVG(cloud_cover_lowmiddle) as avg_cloud_cover_lowmiddle,
+        AVG(cloud_lowest) as avg_cloud_lowest,
+        AVG(humidity) as avg_humidity,
+        AVG(wind_speed) as avg_wind_speed,
+        AVG(pressure_local) as avg_pressure_local,
+        AVG(pressure_sea) as avg_pressure_sea,
+        AVG(pressure_vaper) as avg_pressure_vaper,
+        AVG(dew_point) as avg_dew_point,
+        year,
+        month,
+        day
+    FROM {ICEBERG_DAILY_SPARK_TABLE}
+    WHERE year = {year} AND month = {month} AND day = {day}
+    GROUP BY branch_name, year, month, day
+    """
+    
+    result_df = spark.sql(avg_query)
+    
+    # Display results
+    result_df.show(truncate=False)
+    
+    # Save results to Iceberg table
+    result_df.write \
+        .format("iceberg") \
+        .mode("append") \
+        .partitionBy("year", "month", "day") \
+        .saveAsTable(ICEBERG_DAILY_AVERAGE_SPARK_TABLE)
+    
+    context.log.info(f"Successfully saved daily average data to Iceberg table {ICEBERG_DAILY_AVERAGE_SPARK_TABLE}")

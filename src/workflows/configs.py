@@ -1,17 +1,10 @@
 import os
-import sys
-import logging
+
+from dagster_aws.s3 import s3_pickle_io_manager, s3_resource
+from dagster_pyspark import PySparkResource
 
 from minio import Minio
-
 from pyiceberg.catalog.hive import HiveCatalog
-
-import dagster as dg
-from dagster import fs_io_manager
-from dagster_aws.s3 import s3_pickle_io_manager, s3_resource
-
-#sys.stderr = sys.stdout
-#logging.getLogger().handlers = []
 
 # Set configs from envs
 K8S_SERVICE_ACCOUNT_NAME = os.getenv("K8S_SERVICE_ACCOUNT_NAME", "default")
@@ -62,42 +55,51 @@ def get_iceberg_catalog() -> HiveCatalog:
     )
 
 # Dagster 
-def init_io_manager() -> dict:
-    if IO_MANAGER_TYPE == "s3":
-        return {
-            "io_manager": s3_pickle_io_manager.configured({
-                "s3_bucket": IO_MANAGER_S3_BUCKET,
-                "s3_prefix": IO_MANAGER_S3_PREFIX,
-            }),
-            "s3": s3_resource.configured({
-                "endpoint_url": f"http://{MINIO_ENDPOINT}",
-                "use_ssl": False,
-                "aws_access_key_id": MINIO_ACCESS_KEY,
-                "aws_secret_access_key": MINIO_SECRET_KEY,
-            })
-        }
-    else:
-        return {"io_manager": fs_io_manager}
+def get_s3_resource() -> s3_resource:
+    return s3_resource.configured({
+        "endpoint_url": f"http://{MINIO_ENDPOINT}",
+        "use_ssl": False,
+        "aws_access_key_id": MINIO_ACCESS_KEY,
+        "aws_secret_access_key": MINIO_SECRET_KEY,
+    })
 
-@dg.logger
-def init_stdout_logger(init_context):
-    logger_ = logging.getLogger("dagster_stdout")
-    
-    #dagster_core_logger = logging.getLogger("dagster")
-    #dagster_core_logger.handlers = [] # 핵심 로거 핸들러 제거
-    
-    logger_.setLevel(logging.DEBUG)
-    logger_.handlers = []
-    logger_.propagate = False
-    
-    handler = logging.StreamHandler(sys.stdout)
-    formatter = logging.Formatter(
-        '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+def get_io_manager_resource() -> s3_pickle_io_manager:
+    return s3_pickle_io_manager.configured({
+        "s3_bucket": IO_MANAGER_S3_BUCKET,
+        "s3_prefix": IO_MANAGER_S3_PREFIX,
+    })
+
+def get_pyspark_resource() -> PySparkResource:
+    """Get PySparkResource configured for Kubernetes"""
+    return PySparkResource(
+        spark_config={
+            "spark.master": "k8s://https://kubernetes.default.svc:443",
+            "spark.kubernetes.container.image": "ghcr.io/ssup2-playground/k8s-data-platform_spark-jobs:0.1.10",
+            "spark.kubernetes.namespace": K8S_POD_NAMESPACE,
+            "spark.executor.instances": "2",
+            "spark.executor.memory": "2g",
+            "spark.executor.cores": "1",
+            # Kubernetes API server authentication
+            "spark.kubernetes.authenticate.driver.serviceAccountName": K8S_SERVICE_ACCOUNT_NAME,
+            "spark.kubernetes.authenticate.serviceAccountName": K8S_SERVICE_ACCOUNT_NAME,
+            "spark.kubernetes.authenticate.caCertFile": "/var/run/secrets/kubernetes.io/serviceaccount/ca.crt",
+            "spark.kubernetes.authenticate.oauthTokenFile": "/var/run/secrets/kubernetes.io/serviceaccount/token",
+            # Spark packages
+            "spark.jars.packages": "org.apache.hadoop:hadoop-aws:3.3.4,com.amazonaws:aws-java-sdk-bundle:1.12.262",
+            "spark.jars.ivy": "/tmp/.ivy",
+            # Event log
+            "spark.eventLog.enabled": "true",
+            "spark.eventLog.dir": "s3a://spark/logs",
+            # Monitoring
+            "spark.ui.prometheus.enabled": "true",
+            # Common MinIO/S3 settings
+            "spark.hadoop.fs.s3a.endpoint": f"http://{MINIO_ENDPOINT}",
+            "spark.hadoop.fs.s3a.access.key": MINIO_ACCESS_KEY,
+            "spark.hadoop.fs.s3a.secret.key": MINIO_SECRET_KEY,
+            "spark.hadoop.fs.s3a.path.style.access": "true",
+            "spark.hadoop.fs.s3a.connection.ssl.enabled": "false",
+        }
     )
-    handler.setFormatter(formatter)
-    logger_.addHandler(handler)
-        
-    return logger_
 
 # Weather
 def get_southkorea_weather_api_key() -> str:

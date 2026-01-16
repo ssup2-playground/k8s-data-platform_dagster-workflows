@@ -1,6 +1,6 @@
 from dagster import Definitions
 
-from workflows.configs import init_io_manager, init_stdout_logger
+from workflows.configs import get_s3_resource, get_io_manager_resource, get_pyspark_resource
 
 from workflows.tests.assets import printed_logs, failed_asset
 from workflows.tests.jobs import print_logs, print_logs_asset, print_hello_k8s_job_op, print_hello_execute_k8s_job, fail_job, failed_job_asset
@@ -89,6 +89,9 @@ defs = Definitions(
         schedule_weather_southkorea_hourly,
         schedule_weather_southkorea_daily,
     ],
-    resources=init_io_manager(),
-    loggers={"console": init_stdout_logger},
+    resources={
+        "s3": get_s3_resource(),
+        "io_manager": get_io_manager_resource(),
+        "pyspark": get_pyspark_resource(),
+    },
 )
